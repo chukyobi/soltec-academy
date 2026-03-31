@@ -9,7 +9,7 @@ import { cn } from '@/lib/utils';
 import gsap from 'gsap';
 import { Menu, X } from 'lucide-react';
 
-export function Navbar() {
+export function Navbar({ theme = "light" }: { theme?: "light" | "dark" }) {
   const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
@@ -21,10 +21,11 @@ export function Navbar() {
   const navItems = [
     { name: 'HOME', href: '/' },
     { name: 'COURSES', href: '/courses' },
-    { name: 'BOOK WORKSPACE', href: '/workspace' },
-    { name: 'BLOG', href: '/blog' },
-    { name: 'ENGINEERING', href: '/engineering' },
-    { name: 'ABOUT US', href: '/about' },
+    // { name: 'BOOK WORKSPACE', href: '/workspaces' },
+    // { name: 'BLOG', href: '/blog' },
+    // { name: 'ENGINEERING', href: '/engineering' },
+    // { name: 'ABOUT US', href: '/about' },
+    { name: 'TUTOR PANEL', href: '/instructor' },
   ];
 
   useEffect(() => {
@@ -95,7 +96,8 @@ export function Navbar() {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "text-gray-800 hover:text-primary transition-colors text-sm",
+                      "transition-colors text-sm",
+                      (theme === "dark" && !isScrolled) ? "text-white hover:text-gray-300" : "text-gray-800 hover:text-primary",
                       isActive ? "font-semibold" : ""
                     )}
                   >
@@ -108,13 +110,13 @@ export function Navbar() {
             {/* CTA Button (Desktop) & Menu Button (Mobile) */}
             <div className="flex items-center gap-4">
               <div ref={ctaRef} className="hidden md:block">
-                <Button className="bg-white hover:bg-slate-200 text-black border border-slate-600 font-medium text-sm">
+                <Button className={cn("font-medium text-sm", (theme === "dark" && !isScrolled) ? "bg-white/20 hover:bg-white/30 text-white border-white/30" : "bg-white hover:bg-slate-200 text-black border border-slate-600")}>
                   Payment Guide
                 </Button>
               </div>
               <button
                 onClick={() => setIsOpen(true)}
-                className="md:hidden p-2 text-gray-800 hover:text-blue-600 transition-colors"
+                className={cn("md:hidden p-2 transition-colors", (theme === "dark" && !isScrolled) ? "text-white hover:text-gray-300" : "text-gray-800 hover:text-blue-600")}
                 aria-label="Open menu"
               >
                 <Menu className="w-6 h-6" />

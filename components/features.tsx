@@ -5,6 +5,7 @@ import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/dist/ScrollTrigger';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -357,9 +358,9 @@ export function Features() {
                             ))}
                           </ul>
                         </div>
-                        <button className="mt-auto w-full py-3.5 lg:py-4 bg-white text-gray-900 font-black uppercase tracking-widest text-[10px] lg:text-xs rounded-full hover:scale-[1.02] transition-all duration-300 shadow-xl active:scale-95">
+                        <Link href="/courses" className="block text-center mt-auto w-full py-3.5 lg:py-4 bg-white text-gray-900 font-black uppercase tracking-widest text-[10px] lg:text-xs rounded-full hover:scale-[1.02] transition-all duration-300 shadow-xl active:scale-95">
                           See more
-                        </button>
+                        </Link>
                       </div>
                     </motion.div>
                   )}

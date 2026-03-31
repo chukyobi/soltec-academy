@@ -2,6 +2,7 @@
 
 import { Button } from './ui/button';
 import { Input } from './ui/input';
+import Link from 'next/link';
 
 export function CTA() {
   return (
@@ -41,9 +42,9 @@ export function CTA() {
         </div>
 
         {/* CTA Link */}
-        <button className="text-white/80 hover:text-white transition-colors text-sm sm:text-base font-semibold">
+        <Link href="/courses" className="inline-block text-white/80 hover:text-white transition-colors text-sm sm:text-base font-semibold">
           Start Learning →
-        </button>
+        </Link>
       </div>
     </section>
   );

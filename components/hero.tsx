@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { Button } from './ui/button';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Calendar, FileText, Play, Share2, BookOpen, Award, ArrowRight, ShieldCheck, Globe } from 'lucide-react';
 import gsap from 'gsap';
 
@@ -277,13 +278,17 @@ export function Hero() {
             </div>
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 py-6 w-full sm:w-auto rounded-xl shadow-lg shadow-blue-200 group">
-                Enroll now
-                <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+              <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 py-6 w-full sm:w-auto rounded-xl shadow-lg shadow-blue-200 group">
+                <Link href="/courses">
+                  Enroll now
+                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </Link>
               </Button>
-              <Button variant="outline" size="lg" className="border-2 border-gray-100 bg-white hover:bg-gray-50 text-gray-900 font-semibold px-8 py-6 w-full sm:w-auto rounded-xl shadow-sm">
-                <BookOpen className="mr-2 h-5 w-5 text-blue-600" />
-                Enter Classroom
+              <Button asChild variant="outline" size="lg" className="border-2 border-gray-100 bg-white hover:bg-gray-50 text-gray-900 font-semibold px-8 py-6 w-full sm:w-auto rounded-xl shadow-sm">
+                <Link href="/courses">
+                  <BookOpen className="mr-2 h-5 w-5 text-blue-600" />
+                  Enter Classroom
+                </Link>
               </Button>
             </div>
 

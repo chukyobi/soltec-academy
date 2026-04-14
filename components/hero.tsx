@@ -27,6 +27,23 @@ export function Hero() {
   const mobileIconsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Check for mobile or reduced motion preferences to disable heavy animations
+    const isMobile = window.innerWidth < 1024;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (isMobile || prefersReducedMotion) {
+      // Ensure elements are visible when animations are disabled
+      gsap.set([textRef.current, imageSectionRef.current, mobileImageRef.current], { opacity: 1 });
+      
+      if (iconsRef.current || mobileIconsRef.current) {
+        const desktopIcons = iconsRef.current?.querySelectorAll('.icon-card') || [];
+        const mobileIcons = mobileIconsRef.current?.querySelectorAll('.icon-card') || [];
+        const allIcons = [...Array.from(desktopIcons), ...Array.from(mobileIcons)];
+        gsap.set(allIcons, { opacity: 1, scale: 1, y: 0 });
+      }
+      return;
+    }
+
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
     // Initial state to prevent flash

@@ -116,6 +116,14 @@ export function Features() {
 
   // Entrance Animation
   useEffect(() => {
+    const isMobile = window.innerWidth < 1024;
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (isMobile || prefersReducedMotion) {
+      gsap.set([titleRef.current, tabsRef.current, '.carousel-container', '.slide-content > *'], { opacity: 1, x: 0, y: 0 });
+      return;
+    }
+
     const ctx = gsap.context(() => {
       const tl = gsap.timeline({
         scrollTrigger: {

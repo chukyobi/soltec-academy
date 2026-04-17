@@ -296,7 +296,7 @@ export function Hero() {
 
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 items-start sm:items-center">
               <Button asChild size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-10 py-6 w-full sm:w-auto rounded-xl shadow-lg shadow-blue-200 group">
-                <Link href="/courses">
+                <Link href="/academy">
                   Enroll now
                   <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </Link>
@@ -304,7 +304,7 @@ export function Hero() {
               <Button asChild variant="outline" size="lg" className="border-2 border-gray-100 bg-white hover:bg-gray-50 text-gray-900 font-semibold px-8 py-6 w-full sm:w-auto rounded-xl shadow-sm">
                 <Link href="/courses">
                   <BookOpen className="mr-2 h-5 w-5 text-blue-600" />
-                  Enter Classroom
+                  Buy a Course
                 </Link>
               </Button>
             </div>

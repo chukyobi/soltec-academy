@@ -1,0 +1,9 @@
+{
+  "framework": "nextjs",
+  "buildCommand": "pnpm run build",
+  "installCommand": "pnpm install",
+  "outputDirectory": ".next",
+  "env": {
+    "NEXT_TELEMETRY_DISABLED": "1"
+  }
+}

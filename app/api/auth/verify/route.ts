@@ -32,7 +32,7 @@ export async function POST(req: Request) {
     ]);
 
     // Start session
-    await createSession(userId);
+    await createSession(userId, "creator");
 
     return NextResponse.json({ success: true });
   } catch (err) {

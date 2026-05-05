@@ -13,7 +13,7 @@ const NAV = [
 ];
 
 export default async function StudioLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession();
+  const session = await getSession("creator");
   const isCreator = session ? (session.user.role === "CREATOR" || session.user.role === "ADMIN") : false;
   const initials = (session?.user.name ?? session?.user.email ?? "C")
     .split(" ")
@@ -97,7 +97,7 @@ export default async function StudioLayout({ children }: { children: React.React
             <span className="text-sm font-medium">Settings</span>
           </Link>
           {session && (
-            <a href="/api/auth/logout" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-500 hover:text-red-400 hover:bg-red-500/[0.06] transition-all">
+            <a href="/api/studio/auth/logout" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-500 hover:text-red-400 hover:bg-red-500/[0.06] transition-all">
               <LogOut className="w-4 h-4" />
               <span className="text-sm font-medium">Sign out</span>
             </a>

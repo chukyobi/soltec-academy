@@ -4,7 +4,15 @@ import crypto from "crypto";
 import prisma from "./prisma";
 
 const SECRET = process.env.SESSION_SECRET ?? "soltec-default-secret-change-in-prod";
-const COOKIE_NAME = "soltec_session";
+export type Portal = "admin" | "student" | "tutor" | "creator";
+
+const COOKIE_NAMES: Record<Portal, string> = {
+  admin: "soltec_admin_session",
+  student: "soltec_student_session",
+  tutor: "soltec_tutor_session",
+  creator: "soltec_creator_session",
+};
+
 const SESSION_TTL_DAYS = 7;
 
 // ── Token helpers ─────────────────────────────────────────────────────────────
@@ -45,14 +53,16 @@ export function generateOtp(): string {
 
 // ── Session management ─────────────────────────────────────────────────────────
 
-export async function createSession(userId: string) {
+export async function createSession(userId: string, portal: Portal = "student") {
   const sessionId = crypto.randomUUID();
   const expiresAt = new Date(Date.now() + SESSION_TTL_DAYS * 86400_000);
 
   await prisma.session.create({ data: { id: sessionId, userId, token: sessionId, expiresAt } });
 
   const cookieStore = await cookies();
-  cookieStore.set(COOKIE_NAME, signToken(sessionId), {
+  const cookieName = COOKIE_NAMES[portal];
+  
+  cookieStore.set(cookieName, signToken(sessionId), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: "lax",
@@ -63,14 +73,15 @@ export async function createSession(userId: string) {
   return sessionId;
 }
 
-export async function getSession(req?: NextRequest) {
+export async function getSession(portal: Portal = "student", req?: NextRequest) {
+  const cookieName = COOKIE_NAMES[portal];
   let raw: string | undefined;
 
   if (req) {
-    raw = req.cookies.get(COOKIE_NAME)?.value;
+    raw = req.cookies.get(cookieName)?.value;
   } else {
     const cookieStore = await cookies();
-    raw = cookieStore.get(COOKIE_NAME)?.value;
+    raw = cookieStore.get(cookieName)?.value;
   }
 
   if (!raw) return null;
@@ -87,28 +98,29 @@ export async function getSession(req?: NextRequest) {
   return session;
 }
 
-export async function deleteSession() {
+export async function deleteSession(portal: Portal = "student") {
+  const cookieName = COOKIE_NAMES[portal];
   const cookieStore = await cookies();
-  const raw = cookieStore.get(COOKIE_NAME)?.value;
+  const raw = cookieStore.get(cookieName)?.value;
   if (raw) {
     const sessionId = verifyToken(raw);
     if (sessionId) {
       await prisma.session.deleteMany({ where: { id: sessionId } }).catch(() => {});
     }
   }
-  cookieStore.delete(COOKIE_NAME);
+  cookieStore.delete(cookieName);
 }
 
 // ── Convenience: require session or throw ─────────────────────────────────────
 
-export async function requireSession(req?: NextRequest) {
-  const session = await getSession(req);
+export async function requireSession(portal: Portal = "student", req?: NextRequest) {
+  const session = await getSession(portal, req);
   if (!session) throw new Error("UNAUTHORIZED");
   return session;
 }
 
 export async function requireCreator(req?: NextRequest) {
-  const session = await requireSession(req);
+  const session = await requireSession("creator", req);
   if (session.user.role !== "CREATOR" && session.user.role !== "ADMIN") {
     throw new Error("FORBIDDEN");
   }
@@ -116,13 +128,13 @@ export async function requireCreator(req?: NextRequest) {
 }
 
 export async function requireAdmin(req?: NextRequest) {
-  const session = await requireSession(req);
+  const session = await requireSession("admin", req);
   if (session.user.role !== "ADMIN") throw new Error("FORBIDDEN");
   return session;
 }
 
 export async function requireTutor(req?: NextRequest) {
-  const session = await requireSession(req);
+  const session = await requireSession("tutor", req);
   if (session.user.role !== "TUTOR" && session.user.role !== "ADMIN") {
     throw new Error("FORBIDDEN");
   }
@@ -131,5 +143,5 @@ export async function requireTutor(req?: NextRequest) {
 
 // Any authenticated user (student, creator, admin) can access student-facing APIs
 export async function requireStudent(req?: NextRequest) {
-  return requireSession(req);
+  return requireSession("student", req);
 }

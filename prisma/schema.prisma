@@ -1,52 +1,64 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
+}
+
 datasource db {
   provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
-
-generator client {
-  provider = "prisma-client-js"
-}
-
-// ─── USERS & AUTH ────────────────────────────────────────────────────────────
 
 model User {
-  id            String   @id @default(cuid())
-  clerkId       String?  @unique
-  email         String   @unique
-  name          String?
-  password      String?
-  emailVerified Boolean  @default(false)
-  role          Role     @default(STUDENT)
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
+  id                   String                 @id @default(cuid())
+  clerkId              String?                @unique
+  email                String                 @unique
+  name                 String?
+  password             String?
+  emailVerified        Boolean                @default(false)
+  role                 Role                   @default(STUDENT)
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  needsPasswordChange  Boolean                @default(false)
+  isActive             Boolean                @default(true)
+  studentId            String?                @unique
+  hasSeenWelcome       Boolean                @default(false)
+  hasSeenTour          Boolean                @default(false)
+  assignmentsSubmitted AssignmentSubmission[]
+  cohortEnrollments    CohortEnrollment[]
+  drafts               CourseDraft[]          @relation("CreatorDrafts")
+  coursesCreated       CreatorCourse[]        @relation("CreatorToCourse")
   creatorProfile       CreatorProfile?
   emailVerifications   EmailVerification[]
-  sessions             Session[]
-  coursesCreated       CreatorCourse[]        @relation("CreatorToCourse")
-  drafts               CourseDraft[]          @relation("CreatorDrafts")
-  purchases            Purchase[]
   enrollments          Enrollment[]           @relation("StudentEnrollments")
-  cohortEnrollments    CohortEnrollment[]
-  assignmentsSubmitted AssignmentSubmission[]
-}
-
-enum Role {
-  STUDENT
-  ADMIN
-  TUTOR
-  CREATOR
+  purchases            Purchase[]
+  sessions             Session[]
+  tutorProfile         TutorProfile?
+  managedCohorts       Cohort[]               @relation("CohortTutors")
 }
 
 model CreatorProfile {
   id        String   @id @default(cuid())
   userId    String   @unique
-  user      User     @relation(fields: [userId], references: [id])
   bio       String?
   specialty String?
   website   String?
   avatarUrl String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model TutorProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  specialty     String?
+  bio           String?
+  avatarUrl     String?
+  linkedinUrl   String?
+  coursesTaught String[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model EmailVerification {
@@ -55,8 +67,8 @@ model EmailVerification {
   otp       String
   expiresAt DateTime
   usedAt    DateTime?
-  user      User      @relation(fields: [userId], references: [id])
   createdAt DateTime  @default(now())
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Session {
@@ -64,11 +76,9 @@ model Session {
   userId    String
   token     String   @unique
   expiresAt DateTime
-  user      User     @relation(fields: [userId], references: [id])
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
-
-// ─── BLOG ────────────────────────────────────────────────────────────────────
 
 model BlogPost {
   id         String   @id @default(cuid())
@@ -84,27 +94,20 @@ model BlogPost {
   updatedAt  DateTime @updatedAt
 }
 
-// ─── COURSE CREATION PIPELINE ────────────────────────────────────────────────
-
 /// Staging area — creator edits before submitting for review
 model CourseDraft {
-  id          String      @id @default(cuid())
+  id          String       @id @default(cuid())
   title       String?
   description String?
   price       Float?
   thumbnail   String?
   zipFileUrl  String?
   creatorId   String
-  creator     User        @relation("CreatorDrafts", fields: [creatorId], references: [id])
+  status      DraftStatus  @default(EDITING)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  creator     User         @relation("CreatorDrafts", fields: [creatorId], references: [id])
   videos      DraftVideo[]
-  status      DraftStatus @default(EDITING)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-}
-
-enum DraftStatus {
-  EDITING
-  SUBMITTED
 }
 
 /// Individual video staged inside a draft
@@ -114,52 +117,44 @@ model DraftVideo {
   title       String
   description String?
   order       Int
-  fileName    String      // original filename from ZIP
-  fileUrl     String?     // Supabase storage URL after upload
+  fileName    String
+  fileUrl     String?
   isFree      Boolean     @default(false)
-  draft       CourseDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
   createdAt   DateTime    @default(now())
+  draft       CourseDraft @relation(fields: [draftId], references: [id], onDelete: Cascade)
 }
 
 /// Published course (PENDING → APPROVED → live on catalog)
 model CreatorCourse {
-  id          String       @id @default(cuid())
+  id          String        @id @default(cuid())
   title       String
   description String
   price       Float
-  status      CourseStatus @default(PENDING)
+  status      CourseStatus  @default(PENDING)
   thumbnail   String?
   draftId     String?
   creatorId   String
-  creator     User         @relation("CreatorToCourse", fields: [creatorId], references: [id])
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
   videos      CourseVideo[]
+  creator     User          @relation("CreatorToCourse", fields: [creatorId], references: [id])
+  enrollments Enrollment[]  @relation("CourseEnrollments")
   purchases   Purchase[]
-  enrollments Enrollment[] @relation("CourseEnrollments")
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-}
-
-enum CourseStatus {
-  PENDING
-  APPROVED
-  REJECTED
 }
 
 /// Ordered video in a published course
 model CourseVideo {
-  id          String        @id @default(cuid())
+  id          String          @id @default(cuid())
   courseId    String
   title       String
   description String?
   order       Int
   fileUrl     String
-  isFree      Boolean       @default(false)
-  course      CreatorCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  isFree      Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  course      CreatorCourse   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   progress    VideoProgress[]
-  createdAt   DateTime      @default(now())
 }
-
-// ─── PURCHASES & ENROLLMENT INSTANCES ────────────────────────────────────────
 
 model Purchase {
   id        String        @id @default(cuid())
@@ -167,9 +162,9 @@ model Purchase {
   courseId  String
   amount    Float
   reference String?       @unique
-  user      User          @relation(fields: [userId], references: [id])
-  course    CreatorCourse @relation(fields: [courseId], references: [id])
   createdAt DateTime      @default(now())
+  course    CreatorCourse @relation(fields: [courseId], references: [id])
+  user      User          @relation(fields: [userId], references: [id])
 }
 
 /// One enrollment = one student's private classroom instance for a course
@@ -177,12 +172,12 @@ model Enrollment {
   id          String          @id @default(cuid())
   userId      String
   courseId    String
-  user        User            @relation("StudentEnrollments", fields: [userId], references: [id])
-  course      CreatorCourse   @relation("CourseEnrollments", fields: [courseId], references: [id])
   completedAt DateTime?
-  progress    VideoProgress[]
   createdAt   DateTime        @default(now())
   updatedAt   DateTime        @updatedAt
+  course      CreatorCourse   @relation("CourseEnrollments", fields: [courseId], references: [id])
+  user        User            @relation("StudentEnrollments", fields: [userId], references: [id])
+  progress    VideoProgress[]
 
   @@unique([userId, courseId])
 }
@@ -201,8 +196,6 @@ model VideoProgress {
   @@unique([enrollmentId, videoId])
 }
 
-// ─── NOTIFICATIONS ────────────────────────────────────────────────────────────
-
 model Notification {
   id        String    @id @default(cuid())
   type      String
@@ -212,8 +205,6 @@ model Notification {
   readAt    DateTime?
   createdAt DateTime  @default(now())
 }
-
-// ─── ACADEMY COHORT COURSES ───────────────────────────────────────────────────
 
 model AcademyCourse {
   id               String   @id @default(cuid())
@@ -231,6 +222,12 @@ model AcademyCourse {
   color            String   @default("from-blue-600 to-indigo-600")
   buttonColor      String   @default("bg-white text-blue-600")
   modules          Json?
+  basePrice        Float    @default(50000)
+  isActive         Boolean  @default(true)
+  gradient         String   @default("from-indigo-600 via-purple-600 to-pink-600")
+  outcomes         Json?
+  requirements     Json?
+  tag              String   @default("Engineering")
   cohorts          Cohort[]
 }
 
@@ -238,48 +235,41 @@ model Cohort {
   id                 String             @id @default(cuid())
   name               String
   courseId           String
-  course             AcademyCourse      @relation(fields: [courseId], references: [id])
-  tutorId            String?
-  tutorName          String?
   startDate          DateTime?
   endDate            DateTime?
   maxStudents        Int                @default(20)
-  price              Float              @default(50000)   // in NGN kobo-safe float
   partPaymentEnabled Boolean            @default(true)
-  partPaymentPercent Int                @default(50)      // e.g. 50 = pay 50% now
-  enrollments        CohortEnrollment[]
-  assignments        Assignment[]
+  partPaymentPercent Int                @default(50)
   createdAt          DateTime           @default(now())
+  isActive           Boolean            @default(true)
+  assignments        Assignment[]
+  course             AcademyCourse      @relation(fields: [courseId], references: [id])
+  enrollments        CohortEnrollment[]
+  tutors             User[]             @relation("CohortTutors")
 }
 
 model CohortEnrollment {
   id            String               @id @default(cuid())
   userId        String
   cohortId      String
-  user          User                 @relation(fields: [userId], references: [id])
-  cohort        Cohort               @relation(fields: [cohortId], references: [id])
   totalAmount   Float                @default(0)
   amountPaid    Float                @default(0)
   paymentStatus AcademyPaymentStatus @default(UNPAID)
   reference     String?
   createdAt     DateTime             @default(now())
   updatedAt     DateTime             @updatedAt
+  cohort        Cohort               @relation(fields: [cohortId], references: [id])
+  user          User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([userId, cohortId])
 }
 
-enum AcademyPaymentStatus {
-  UNPAID
-  PARTIAL
-  PAID
-}
-
 model Assignment {
-  id          String               @id @default(cuid())
+  id          String                 @id @default(cuid())
   title       String
   description String
   cohortId    String
-  cohort      Cohort               @relation(fields: [cohortId], references: [id])
+  cohort      Cohort                 @relation(fields: [cohortId], references: [id])
   submissions AssignmentSubmission[]
 }
 
@@ -291,4 +281,38 @@ model AssignmentSubmission {
   grade        String?
   assignment   Assignment @relation(fields: [assignmentId], references: [id])
   user         User       @relation(fields: [userId], references: [id])
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+  TUTOR
+  CREATOR
+}
+
+enum DraftStatus {
+  EDITING
+  SUBMITTED
+}
+
+enum CourseStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AcademyPaymentStatus {
+  UNPAID
+  PARTIAL
+  PAID
+}
+
+model PendingStudent {
+  id            String   @id @default(cuid())
+  email         String   @unique
+  studentId     String   @unique
+  cohortId      String
+  paymentStatus String   @default("PAID")
+  amountPaid    Float
+  createdAt     DateTime @default(now())
 }

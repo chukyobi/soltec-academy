@@ -8,6 +8,7 @@ import {
   Layers, BarChart2, Code2, Database, MonitorSmartphone,
   Award, ChevronRight
 } from "lucide-react";
+import { WelcomeTour } from "@/components/student/WelcomeTour";
 
 export const revalidate = 0;
 
@@ -55,6 +56,12 @@ export default async function StudentProfilePage() {
 
   return (
     <div className="min-h-screen bg-[#09090f]">
+      <WelcomeTour 
+        userName={session.user.name ?? "Student"} 
+        hasSeenWelcome={session.user.hasSeenWelcome} 
+        hasSeenTour={session.user.hasSeenTour} 
+      />
+
       {/* Header */}
       <header className="sticky top-0 z-20 bg-[#09090f]/80 backdrop-blur border-b border-white/5 px-4 sm:px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
@@ -77,23 +84,27 @@ export default async function StudentProfilePage() {
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-10 space-y-10">
         {/* Hero */}
-        <div className="flex items-start gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-2xl shrink-0">
-            {(session.user.name ?? session.user.email ?? "S")[0].toUpperCase()}
-          </div>
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white">
-              {session.user.name ?? "Student"}
-            </h1>
-            <p className="text-slate-400 text-sm mt-0.5">{session.user.email}</p>
-            <div className="flex flex-wrap items-center gap-2 mt-2">
-              <span className="text-[10px] font-black text-indigo-400 bg-indigo-400/10 border border-indigo-400/20 px-2 py-0.5 rounded-full uppercase tracking-widest">Student</span>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-2xl shrink-0">
+              {(session.user.name ?? session.user.email ?? "S")[0].toUpperCase()}
+            </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black text-white">
+                {session.user.name ?? "Student"}
+              </h1>
+              <p className="text-slate-400 text-sm mt-0.5">{session.user.email}</p>
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                <span className="text-[10px] font-black text-indigo-400 bg-indigo-400/10 border border-indigo-400/20 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                  ID: {session.user.studentId ?? "TBD"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div data-tour="stats" className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
             { label: "Tracks Enrolled", value: enrollments.length, icon: GraduationCap, color: "from-indigo-500 to-purple-600" },
             { label: "Fully Paid", value: fullyPaid, icon: CheckCircle2, color: "from-green-500 to-emerald-600" },
@@ -188,6 +199,7 @@ export default async function StudentProfilePage() {
                       </div>
 
                       <Link
+                        data-tour="classroom-btn"
                         href={`/student/classroom/${cohort.id}`}
                         className="w-full flex items-center justify-center gap-2 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 hover:opacity-90 text-white font-black rounded-xl transition-all text-sm"
                       >

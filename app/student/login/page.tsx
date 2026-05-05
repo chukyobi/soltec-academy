@@ -75,7 +75,7 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const redirect = searchParams.get("redirect") ?? "/student/profile";
 
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -89,7 +89,7 @@ function LoginForm() {
       const res = await fetch("/api/student/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: email.trim(), password }),
+        body: JSON.stringify({ identifier: identifier.trim(), password }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Login failed");
@@ -184,16 +184,15 @@ function LoginForm() {
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">
-                Email Address
+                Email or Student ID
               </label>
               <input
-                id="login-email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
+                id="login-identifier"
+                type="text"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="you@example.com or STU-2026-XXXX"
                 required
-                autoComplete="email"
                 className="w-full border border-slate-200 rounded-xl px-4 py-3.5 text-slate-900 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all placeholder:text-slate-300 bg-slate-50"
               />
             </div>

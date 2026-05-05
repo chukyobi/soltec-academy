@@ -14,7 +14,8 @@ function SignupForm() {
 
   const [step, setStep] = useState<Step>("form");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(searchParams.get("email") ?? "");
+  const [studentId, setStudentId] = useState(searchParams.get("studentId") ?? "");
   const [password, setPassword] = useState("");
   const [show, setShow] = useState(false);
   const [userId, setUserId] = useState("");
@@ -31,7 +32,7 @@ function SignupForm() {
       const res = await fetch("/api/student/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email, password }),
+        body: JSON.stringify({ name, email, password, studentId }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
@@ -142,7 +143,7 @@ function SignupForm() {
 
       {/* ── Right panel ── */}
       <div className="flex-1 flex items-center justify-center px-6 bg-white overflow-y-auto">
-        <div className="w-full max-w-md">
+        <div className="w-full max-w-md py-12">
           {/* Mobile logo */}
           <Link href="/" className="lg:hidden inline-flex items-center gap-2 text-slate-900 font-black text-lg mb-8">
             <GraduationCap className="w-5 h-5 text-indigo-600" />
@@ -166,6 +167,19 @@ function SignupForm() {
               </div>
 
               <form onSubmit={handleSignup} className="space-y-4">
+                <div className="bg-indigo-50 border border-indigo-100 rounded-2xl p-4 mb-2">
+                   <label className="block text-[10px] font-black text-indigo-600 uppercase tracking-widest mb-1.5">Student ID (Required)</label>
+                   <input
+                    type="text"
+                    value={studentId}
+                    onChange={(e) => setStudentId(e.target.value)}
+                    placeholder="e.g. STU-2026-XXXX"
+                    required
+                    className="w-full bg-white border border-indigo-200 rounded-xl px-4 py-3.5 text-slate-900 font-bold text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                  />
+                  <p className="text-[10px] text-indigo-400 mt-2 font-medium">Check your email for the Student ID sent after your track payment.</p>
+                </div>
+
                 <div>
                   <label className="block text-xs font-black text-slate-500 uppercase tracking-widest mb-1.5">Full Name</label>
                   <input

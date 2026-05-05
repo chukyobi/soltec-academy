@@ -4,7 +4,7 @@ import { headers } from "next/headers";
 
 // GET /api/student/auth/logout
 export async function GET() {
-  await deleteSession().catch(() => {});
+  await deleteSession("student").catch(() => {});
 
   // Derive origin from request headers for redirect
   const headersList = await headers();

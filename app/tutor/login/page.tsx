@@ -27,7 +27,12 @@ function TutorLoginForm() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
-      router.push(redirect);
+      
+      if (data.user?.needsPasswordChange) {
+        router.push("/tutor/setup");
+      } else {
+        router.push(redirect);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Login failed");
     } finally {

@@ -24,13 +24,23 @@ function fmtDate(d: Date | null) {
 }
 
 export default async function TutorDashboardPage() {
-  const session = await getSession().catch(() => null);
+  const session = await getSession("tutor").catch(() => null);
   if (!session || (session.user.role !== "TUTOR" && session.user.role !== "ADMIN")) {
     redirect("/tutor/login");
   }
 
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  if (user?.needsPasswordChange) {
+    redirect("/tutor/setup");
+  }
+
+  // Find cohorts where this user is assigned as a tutor
   const cohorts = await prisma.cohort.findMany({
-    where: { tutorId: session.user.id },
+    where: {
+      tutors: {
+        some: { id: session.user.id }
+      }
+    },
     include: {
       course: { select: { id: true, title: true, slug: true, color: true, level: true } },
       _count: { select: { enrollments: true, assignments: true } },
@@ -38,8 +48,8 @@ export default async function TutorDashboardPage() {
     orderBy: { startDate: "asc" },
   });
 
-  const totalStudents = cohorts.reduce((s, c) => s + c._count.enrollments, 0);
-  const totalAssignments = cohorts.reduce((s, c) => s + c._count.assignments, 0);
+  const totalStudents = cohorts.reduce((s: any, c: any) => s + c._count.enrollments, 0);
+  const totalAssignments = cohorts.reduce((s: any, c: any) => s + c._count.assignments, 0);
 
   return (
     <div className="min-h-screen bg-[#09090f] flex flex-col">
@@ -56,7 +66,7 @@ export default async function TutorDashboardPage() {
         </div>
         <div className="flex items-center gap-3">
           <Link href="/" className="text-slate-400 hover:text-white text-xs font-bold transition-colors">← Site</Link>
-          <Link href="/api/student/auth/logout" className="flex items-center gap-1.5 text-slate-400 hover:text-white text-xs font-bold transition-colors">
+          <Link href="/api/tutor/auth/logout" className="flex items-center gap-1.5 text-slate-400 hover:text-white text-xs font-bold transition-colors">
             <LogOut className="w-3.5 h-3.5" /> Sign Out
           </Link>
         </div>
@@ -101,7 +111,7 @@ export default async function TutorDashboardPage() {
             </div>
           ) : (
             <div className="grid sm:grid-cols-2 gap-4">
-              {cohorts.map(cohort => {
+              {cohorts.map((cohort: any) => {
                 const Icon = SLUG_ICONS[cohort.course.slug] ?? BookOpen;
                 const spotsLeft = cohort.maxStudents !== undefined
                   ? cohort.maxStudents - cohort._count.enrollments

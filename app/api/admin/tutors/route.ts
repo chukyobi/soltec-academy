@@ -13,8 +13,8 @@ export async function GET() {
         id: true,
         name: true,
         email: true,
+        isActive: true,
         createdAt: true,
-        // cohorts assigned via cohort.tutorId
       },
       orderBy: { createdAt: "desc" },
     });
@@ -22,8 +22,10 @@ export async function GET() {
     // Enrich with cohort count
     const enriched = await Promise.all(
       tutors.map(async (t) => {
-        const cohortCount = await prisma.cohort.count({ where: { tutorId: t.id } });
-        return { ...t, cohortCount };
+        const cohortCount = await prisma.cohort.count({ 
+          where: { tutors: { some: { id: t.id } } } 
+        });
+        return { ...t, cohortCount, isActive: (t as any).isActive ?? true };
       })
     );
 
@@ -67,6 +69,7 @@ export async function POST(req: Request) {
         password: hashed,
         role: "TUTOR",
         emailVerified: true, // admins pre-verify tutor accounts
+        needsPasswordChange: true,
       },
     });
 

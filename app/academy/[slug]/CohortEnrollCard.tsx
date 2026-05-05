@@ -11,18 +11,17 @@ import {
 interface Cohort {
   id: string;
   name: string;
-  tutorName: string | null;
   startDate: string | null;
   endDate: string | null;
   maxStudents: number;
-  price: number;
   partPaymentEnabled: boolean;
   partPaymentPercent: number;
   enrolledCount: number;
+  tutors: { name: string | null }[];
 }
 
 interface Props {
-  course: { id: string; title: string; slug: string; price: string };
+  course: { id: string; title: string; slug: string; price: string; basePrice: number };
   cohorts: Cohort[];
   userId: string | null;
   userEmail: string | null;
@@ -30,7 +29,7 @@ interface Props {
 }
 
 type PayType = "FULL" | "PART";
-type Stage = "choose" | "confirm" | "processing" | "success";
+type Stage = "choose" | "identify" | "email" | "confirm" | "processing" | "success";
 
 function fmtNGN(n: number) {
   return `₦${n.toLocaleString("en-NG", { minimumFractionDigits: 0 })}`;
@@ -65,6 +64,8 @@ export default function CohortEnrollCard({
   const [payType, setPayType] = useState<PayType>("FULL");
   const [open, setOpen] = useState(false);
   const [stage, setStage] = useState<Stage>("choose");
+  const [isNew, setIsNew] = useState(false);
+  const [email, setEmail] = useState("");
   const [error, setError] = useState<string | null>(null);
   const dropRef = useRef<HTMLDivElement>(null);
 
@@ -98,14 +99,14 @@ export default function CohortEnrollCard({
   const isFull = spotsLeft <= 0;
   const amountNGN = selected
     ? payType === "FULL"
-      ? selected.price
-      : (selected.price * selected.partPaymentPercent) / 100
+      ? course.basePrice
+      : (course.basePrice * selected.partPaymentPercent) / 100
     : 0;
-  const balanceNGN = selected ? selected.price - amountNGN : 0;
+  const balanceNGN = selected ? course.basePrice - amountNGN : 0;
 
   // ── Demo payment confirmation stage ──
   async function handleDemoEnroll() {
-    if (!selected || !userId) return;
+    if (!selected) return;
     setStage("processing");
     setError(null);
     try {
@@ -117,13 +118,27 @@ export default function CohortEnrollCard({
         body: JSON.stringify({
           cohortId: selected.id,
           paymentType: payType,
-          // no reference required – server auto-generates in demo mode
+          email: isNew ? email : undefined,
+          isNew: isNew
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "Enrollment failed");
-      setStage("success");
-      setTimeout(() => router.push("/student/profile"), 2200);
+      if (!res.ok) {
+        if (data.code === "AUTH_REQUIRED") {
+           setError(data.error);
+           setStage("identify");
+           return;
+        }
+        throw new Error(data.error ?? "Enrollment failed");
+      }
+      
+      if (data.redirect) {
+        setStage("success");
+        setTimeout(() => router.push(data.redirect), 2000);
+      } else {
+        setStage("success");
+        setTimeout(() => router.push("/student/dashboard"), 2200);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");
       setStage("confirm");
@@ -138,8 +153,70 @@ export default function CohortEnrollCard({
           <div className="w-20 h-20 bg-white/20 backdrop-blur rounded-full flex items-center justify-center mx-auto mb-5">
             <CheckCircle2 className="w-10 h-10 text-white" />
           </div>
-          <p className="font-black text-white text-2xl mb-2">You&apos;re enrolled! 🎉</p>
-          <p className="text-white/70 text-sm">Taking you to your classroom...</p>
+          <p className="font-black text-white text-2xl mb-2">Success! 🎉</p>
+          <p className="text-white/70 text-sm">Redirecting you now...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Step 1: Identify (New vs Existing) ──
+  if (stage === "identify") {
+    return (
+      <div className="sticky top-28 bg-white border border-slate-200 rounded-3xl shadow-xl overflow-hidden">
+        <div className={`bg-gradient-to-br ${gradient} px-7 py-7`}>
+          <p className="text-white font-black text-xl leading-tight">Welcome to Soltec!</p>
+          <p className="text-white/70 text-xs mt-2 font-bold uppercase tracking-widest">Are you a new student?</p>
+        </div>
+        <div className="p-6 space-y-4">
+          <button 
+            onClick={() => { setIsNew(true); setStage("email"); }}
+            className="w-full py-5 border-2 border-indigo-100 rounded-2xl flex flex-col items-center justify-center gap-1 hover:border-indigo-500 hover:bg-indigo-50 transition-all group"
+          >
+            <span className="font-black text-slate-900 group-hover:text-indigo-600 transition-colors">I&apos;m a New Student</span>
+            <span className="text-slate-400 text-xs font-medium uppercase tracking-tighter">I don&apos;t have an account yet</span>
+          </button>
+          <button 
+            onClick={() => router.push(`/student/login?redirect=/academy/${course.slug}`)}
+            className="w-full py-5 border-2 border-slate-100 rounded-2xl flex flex-col items-center justify-center gap-1 hover:border-slate-400 hover:bg-slate-50 transition-all group"
+          >
+            <span className="font-black text-slate-900">Existing Student</span>
+            <span className="text-slate-400 text-xs font-medium uppercase tracking-tighter">I already have a Student ID / Email</span>
+          </button>
+          <button onClick={() => setStage("choose")} className="w-full py-2 text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-slate-600">← Back to cohort</button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Step 2: Email capture (for new students) ──
+  if (stage === "email") {
+    return (
+      <div className="sticky top-28 bg-white border border-slate-200 rounded-3xl shadow-xl overflow-hidden">
+        <div className={`bg-gradient-to-br ${gradient} px-7 py-7`}>
+          <p className="text-white font-black text-xl leading-tight">Email Address</p>
+          <p className="text-white/70 text-xs mt-1">We&apos;ll send your Student ID here after payment.</p>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Your Active Email</label>
+            <input 
+              type="email" 
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 focus:outline-none focus:border-indigo-500"
+              placeholder="e.g. name@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
+          <button 
+            disabled={!email.includes("@")}
+            onClick={() => setStage("confirm")}
+            className="w-full py-4 bg-slate-900 text-white font-black rounded-2xl disabled:opacity-50 transition-all"
+          >
+            Continue to Payment
+          </button>
+          <button onClick={() => setStage("identify")} className="w-full py-2 text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-slate-600">← Change option</button>
         </div>
       </div>
     );
@@ -157,7 +234,6 @@ export default function CohortEnrollCard({
           {/* Order summary */}
           <div className="bg-slate-50 rounded-2xl p-4 space-y-2.5 text-sm">
             <div className="flex justify-between"><span className="text-slate-500">Cohort</span><span className="font-bold text-slate-900 text-right max-w-[60%] truncate">{selected?.name}</span></div>
-            <div className="flex justify-between"><span className="text-slate-500">Tutor</span><span className="font-bold text-slate-900">{selected?.tutorName ?? "TBD"}</span></div>
             <div className="flex justify-between"><span className="text-slate-500">Starts</span><span className="font-bold text-slate-900">{fmtDate(selected?.startDate ?? null)}</span></div>
             <div className="flex justify-between"><span className="text-slate-500">Payment</span><span className="font-bold text-slate-900">{payType === "FULL" ? "Full payment" : `${selected?.partPaymentPercent}% Part payment`}</span></div>
             <div className="border-t border-slate-200 pt-2.5 flex justify-between">
@@ -194,7 +270,7 @@ export default function CohortEnrollCard({
             }
           </button>
           <button
-            onClick={() => setStage("choose")}
+            onClick={() => setStage(isNew ? "email" : "choose")}
             disabled={stage === "processing"}
             className="w-full py-2.5 text-slate-400 hover:text-slate-600 text-sm font-bold transition-colors"
           >
@@ -242,16 +318,20 @@ export default function CohortEnrollCard({
                 {cohorts.map((c) => {
                   const spots = c.maxStudents - c.enrolledCount;
                   const full = spots <= 0;
+                  const tutorNames = c.tutors.map(t => t.name).filter(Boolean).join(", ");
                   return (
                     <button
                       key={c.id}
                       disabled={full}
                       onClick={() => { setSelected(c); setOpen(false); }}
-                      className={`w-full text-left px-4 py-3.5 border-b border-slate-50 last:border-0 transition-colors ${full ? "opacity-40 cursor-not-allowed" : "hover:bg-slate-50"} ${selected?.id === c.id ? "bg-indigo-50" : ""}`}
+                      className={`w-full text-left px-4 py-3.5 border-b border-slate-50 last:border-0 transition-all ${full ? "opacity-40 cursor-not-allowed" : "hover:bg-slate-50"} ${selected?.id === c.id ? "bg-indigo-50" : ""}`}
                     >
                       <div className="flex items-center justify-between">
                         <p className="font-bold text-slate-900 text-sm">{c.name}</p>
                         {selected?.id === c.id && <Check className="w-4 h-4 text-indigo-500" />}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">
+                        {tutorNames ? `Tutor: ${tutorNames}` : "Tutor: TBD"}
                       </div>
                       <div className="flex gap-3 text-xs text-slate-400 mt-1">
                         <span>{fmtDate(c.startDate)} → {fmtDate(c.endDate)}</span>
@@ -270,12 +350,6 @@ export default function CohortEnrollCard({
         {/* Cohort Details */}
         {selected && (
           <div className="bg-slate-50 rounded-2xl p-4 space-y-3 text-sm">
-            {selected.tutorName && (
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 flex items-center gap-1.5"><Users className="w-3.5 h-3.5" /> Tutor</span>
-                <span className="font-bold text-slate-900">{selected.tutorName}</span>
-              </div>
-            )}
             <div className="flex items-center justify-between">
               <span className="text-slate-500 flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> Starts</span>
               <span className="font-bold text-slate-900">{fmtDate(selected.startDate)}</span>
@@ -294,7 +368,7 @@ export default function CohortEnrollCard({
             <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Payment Option</label>
             <div className="grid grid-cols-2 gap-2">
               {(["FULL", "PART"] as const).map(pt => {
-                const amt = pt === "FULL" ? selected.price : (selected.price * selected.partPaymentPercent) / 100;
+                const amt = pt === "FULL" ? course.basePrice : (course.basePrice * selected.partPaymentPercent) / 100;
                 const label = pt === "FULL" ? "Full Pay" : `${selected.partPaymentPercent}% Now`;
                 const active = payType === pt;
                 return (
@@ -344,30 +418,18 @@ export default function CohortEnrollCard({
         )}
 
         {/* CTA */}
-        {!userId ? (
-          <div className="space-y-3">
-            <Link
-              id="signin-to-enroll"
-              href={`/student/login?redirect=/academy/${course.slug}`}
-              className={`block w-full py-4 text-center bg-gradient-to-r ${gradient} text-white font-black rounded-2xl hover:opacity-90 shadow-lg text-sm transition-all`}
-            >
-              Sign In to Enroll
-            </Link>
-            <p className="text-center text-slate-400 text-xs">
-              No account?{" "}
-              <Link href={`/student/signup?redirect=/academy/${course.slug}`} className="text-indigo-600 font-bold hover:underline">
-                Create one free →
-              </Link>
-            </p>
-          </div>
-        ) : isFull ? (
+        {isFull ? (
           <button disabled className="w-full py-4 bg-slate-100 text-slate-400 font-black rounded-2xl cursor-not-allowed text-sm">
             Cohort Full
           </button>
         ) : (
           <button
             id="pay-enroll-btn"
-            onClick={() => { setError(null); setStage("confirm"); }}
+            onClick={() => { 
+              setError(null); 
+              if (userId) setStage("confirm");
+              else setStage("identify");
+            }}
             disabled={!selected}
             className={`w-full py-4 bg-gradient-to-r ${gradient} hover:opacity-90 disabled:opacity-50 text-white font-black rounded-2xl transition-all shadow-lg flex items-center justify-center gap-2 text-sm`}
           >

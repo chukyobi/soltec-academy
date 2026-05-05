@@ -1,13 +1,22 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { hashPassword, generateOtp, createSession } from "@/lib/auth";
+import { hashPassword, generateOtp } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
-    const { email, password, name } = await req.json();
+    const { email, password, name, studentId } = await req.json();
 
-    if (!email || !password) {
-      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+    if (!email || !password || !studentId) {
+      return NextResponse.json({ error: "Email, password, and Student ID are required" }, { status: 400 });
+    }
+
+    // 1. Verify Student ID and Email against PendingStudent
+    const pending = await prisma.pendingStudent.findUnique({
+      where: { studentId }
+    });
+
+    if (!pending || pending.email !== email) {
+      return NextResponse.json({ error: "Invalid Student ID or Email. Please ensure you have paid for a track." }, { status: 403 });
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
@@ -17,7 +26,13 @@ export async function POST(req: Request) {
 
     const hashed = hashPassword(password);
     const user = await prisma.user.create({
-      data: { email, password: hashed, name: name ?? email.split("@")[0], role: "STUDENT" },
+      data: { 
+        email, 
+        password: hashed, 
+        name: name ?? email.split("@")[0], 
+        role: "STUDENT",
+        studentId: studentId
+      },
     });
 
     const otp = generateOtp();

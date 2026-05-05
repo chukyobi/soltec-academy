@@ -18,15 +18,21 @@ function fmtDate(d: Date | null) {
 
 export default async function TutorClassroomPage({ params }: { params: Promise<{ cohortId: string }> }) {
   const { cohortId } = await params;
-  const session = await getSession().catch(() => null);
+  const session = await getSession("tutor").catch(() => null);
   if (!session || (session.user.role !== "TUTOR" && session.user.role !== "ADMIN")) {
     redirect("/tutor/login");
+  }
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  if (user?.needsPasswordChange) {
+    redirect("/tutor/setup");
   }
 
   const cohort = await prisma.cohort.findUnique({
     where: { id: cohortId },
     include: {
       course: true,
+      tutors: { select: { id: true } },
       enrollments: {
         include: {
           user: { select: { id: true, name: true, email: true, createdAt: true } },
@@ -48,7 +54,8 @@ export default async function TutorClassroomPage({ params }: { params: Promise<{
   if (!cohort) notFound();
 
   // Tutors can only see their own cohorts (admins can see all)
-  if (session.user.role === "TUTOR" && cohort.tutorId !== session.user.id) {
+  const isInstructor = cohort.tutors.some((t: any) => t.id === session.user.id);
+  if (session.user.role === "TUTOR" && !isInstructor) {
     redirect("/tutor/dashboard");
   }
 
@@ -56,9 +63,9 @@ export default async function TutorClassroomPage({ params }: { params: Promise<{
     ? (cohort.course.modules as { id: string; title: string; videos: { id: string; title: string; duration: string; isFree: boolean }[] }[])
     : [];
 
-  const totalLessons = modules.reduce((sum, m) => sum + m.videos.length, 0);
-  const paidFull = cohort.enrollments.filter(e => e.paymentStatus === "PAID").length;
-  const paidPart = cohort.enrollments.filter(e => e.paymentStatus === "PARTIAL").length;
+  const totalLessons = modules.reduce((sum: any, m: any) => sum + m.videos.length, 0);
+  const paidFull = cohort.enrollments.filter((e: any) => e.paymentStatus === "PAID").length;
+  const paidPart = cohort.enrollments.filter((e: any) => e.paymentStatus === "PARTIAL").length;
 
   const serialCohort = {
     id: cohort.id,
@@ -69,7 +76,7 @@ export default async function TutorClassroomPage({ params }: { params: Promise<{
       slug: cohort.course.slug,
       color: cohort.course.color,
     },
-    enrollments: cohort.enrollments.map(e => ({
+    enrollments: cohort.enrollments.map((e: any) => ({
       id: e.id,
       name: e.user.name,
       email: e.user.email,
@@ -78,11 +85,11 @@ export default async function TutorClassroomPage({ params }: { params: Promise<{
       amountPaid: e.amountPaid,
       totalAmount: e.totalAmount,
     })),
-    assignments: cohort.assignments.map(a => ({
+    assignments: cohort.assignments.map((a: any) => ({
       id: a.id,
       title: a.title,
       description: a.description,
-      submissions: a.submissions.map(s => ({
+      submissions: a.submissions.map((s: any) => ({
         id: s.id,
         fileUrl: s.fileUrl,
         grade: s.grade,

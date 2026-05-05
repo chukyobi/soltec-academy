@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   try {
     await requireAdmin();
     const body = await req.json();
-    const { title, slug, description, level, duration, price, color, isProgramming, instructorName, instructorRole } = body;
+    const { title, slug, description, level, duration, price, basePrice, color, isProgramming, instructorName, instructorRole } = body;
 
     if (!title || !slug || !description) {
       return NextResponse.json({ error: "title, slug, and description are required" }, { status: 400 });
@@ -44,6 +44,7 @@ export async function POST(req: Request) {
         level: level ?? "Beginner",
         duration: duration ?? "3 Months",
         price: price ?? "NGN 100,000",
+        basePrice: basePrice ?? 50000,
         color: color ?? "from-indigo-600 to-purple-600",
         isProgramming: isProgramming ?? false,
         instructorName: instructorName ?? null,

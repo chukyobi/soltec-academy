@@ -20,9 +20,11 @@ export default async function Home() {
   const [session, academyCourses, featuredPosts] = await Promise.all([
     getSession().catch(() => null),
     prisma.academyCourse.findMany({
+      where: { isActive: true },
       orderBy: { title: 'asc' },
       include: {
         cohorts: {
+          where: { isActive: true },
           orderBy: { startDate: 'asc' },
           include: { _count: { select: { enrollments: true } } },
         },
@@ -36,13 +38,13 @@ export default async function Home() {
   ]);
 
   // Annotate each course with its nearest cohort status
-  const courses = academyCourses.map((course) => {
+  const courses = academyCourses.map((course: any) => {
     const activeCohort = course.cohorts.find(
-      (c) => c.startDate && c.startDate <= now && (!c.endDate || c.endDate >= now)
+      (c: any) => c.startDate && c.startDate <= now && (!c.endDate || c.endDate >= now)
     );
     const upcomingCohort = course.cohorts
-      .filter((c) => c.startDate && c.startDate > now)
-      .sort((a, b) => (a.startDate?.getTime() ?? 0) - (b.startDate?.getTime() ?? 0))[0];
+      .filter((c: any) => c.startDate && c.startDate > now)
+      .sort((a: any, b: any) => (a.startDate?.getTime() ?? 0) - (b.startDate?.getTime() ?? 0))[0];
 
     const displayCohort = activeCohort ?? upcomingCohort ?? null;
 
@@ -55,6 +57,8 @@ export default async function Home() {
       duration: course.duration,
       price: course.price,
       color: course.color,
+      gradient: course.gradient,
+      tag: course.tag,
       cohortStatus: activeCohort ? 'active' : upcomingCohort ? 'upcoming' : 'none',
       cohortStartDate: displayCohort?.startDate?.toISOString() ?? null,
       cohortEndDate: displayCohort?.endDate?.toISOString() ?? null,

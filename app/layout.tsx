@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Barlow } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 const barlow = Barlow({
@@ -42,6 +43,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${barlow.variable} font-barlow antialiased`}>
         {children}
+        <Toaster position="top-center" richColors />
         <Analytics />
       </body>
     </html>

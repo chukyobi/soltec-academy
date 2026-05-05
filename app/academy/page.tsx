@@ -9,21 +9,9 @@ import {
   FiBarChart2, FiCode, FiDatabase, FiClock, FiZap,
 } from "react-icons/fi";
 import { MdOutlineDesignServices, MdOutlineComputer } from "react-icons/md";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, GraduationCap } from "lucide-react";
 
 export const revalidate = 60;
-
-const COURSE_META: Record<string, {
-  gradient: string; tag: string; outcomes: string[];
-}> = {
-  "product-design":   { gradient: "from-rose-500 via-pink-500 to-fuchsia-600",   tag: "Design",      outcomes: ["Figma mastery", "Design Systems", "Prototyping", "User Research"] },
-  "ui-ux-design":     { gradient: "from-violet-600 via-purple-600 to-indigo-600", tag: "Design",      outcomes: ["UX Research", "Wireframing", "Usability Testing", "UI Principles"] },
-  "data-analysis":    { gradient: "from-amber-500 via-orange-500 to-red-500",     tag: "Data",        outcomes: ["Excel & SQL", "Python Basics", "Data Visualization", "Dashboards"] },
-  "frontend-web-dev": { gradient: "from-cyan-500 via-sky-500 to-blue-600",        tag: "Engineering", outcomes: ["HTML/CSS/JS", "React", "Responsive Design", "Git & Deploy"] },
-  "backend-web-dev":  { gradient: "from-emerald-500 via-teal-500 to-green-600",   tag: "Engineering", outcomes: ["Node.js", "REST APIs", "Databases", "Auth & Security"] },
-};
-
-const FALLBACK_META = { gradient: "from-slate-600 to-slate-700", tag: "Course", outcomes: [] };
 
 const FEATURES = [
   { icon: "🎓", title: "Expert Mentors", desc: "Seasoned professionals with real industry experience guide every cohort session." },
@@ -90,7 +78,7 @@ export default async function AcademyPage() {
       <section id="courses" className="py-28 px-4 sm:px-6 bg-white">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
-            <p className="text-indigo-600 font-black text-xs uppercase tracking-widest mb-4">5 Tracks</p>
+            <p className="text-indigo-600 font-black text-xs uppercase tracking-widest mb-4">{courses.length} Tracks</p>
             <h2 className="text-4xl sm:text-6xl font-black text-slate-900 leading-tight">
               Choose your <span className="text-indigo-600">track</span>
             </h2>
@@ -101,8 +89,11 @@ export default async function AcademyPage() {
 
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {courses.map((course) => {
-              const meta = COURSE_META[course.slug] ?? FALLBACK_META;
-              const Icon = SLUG_ICONS[course.slug] ?? FiCode;
+              const Icon = SLUG_ICONS[course.slug] ?? GraduationCap;
+              const gradient = course.gradient || "from-indigo-600 via-purple-600 to-pink-600";
+              const tag = course.tag || "Engineering";
+              const outcomes = Array.isArray(course.outcomes) ? (course.outcomes as string[]) : [];
+              
               const activeCohort = course.cohorts.find(
                 (c) => c.startDate && c.startDate <= now && (!c.endDate || c.endDate >= now)
               );
@@ -115,7 +106,7 @@ export default async function AcademyPage() {
                   href={`/academy/${course.slug}`}
                   className="group relative rounded-3xl overflow-hidden hover:-translate-y-2 transition-all duration-300 shadow-lg hover:shadow-2xl flex flex-col min-h-[400px]"
                 >
-                  <div className={`absolute inset-0 bg-gradient-to-br ${meta.gradient}`} />
+                  <div className={`absolute inset-0 bg-gradient-to-br ${gradient}`} />
                   <div className="absolute inset-0 bg-black/20" />
                   <div className="absolute -top-10 -right-10 w-52 h-52 bg-white/10 rounded-full" />
                   <div className="absolute -bottom-8 -left-8 w-40 h-40 bg-black/10 rounded-full" />
@@ -136,7 +127,7 @@ export default async function AcademyPage() {
                         <Icon className="w-8 h-8 text-white" />
                       </div>
                       <span className="bg-white/20 border border-white/30 text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full">
-                        {meta.tag}
+                        {tag}
                       </span>
                     </div>
 
@@ -145,7 +136,7 @@ export default async function AcademyPage() {
                       <h3 className="text-2xl font-black text-white leading-tight mb-3">{course.title}</h3>
                       <p className="text-white/70 text-sm leading-relaxed line-clamp-2 mb-5">{course.description}</p>
                       <div className="flex flex-wrap gap-2">
-                        {meta.outcomes.slice(0, 3).map((o) => (
+                        {outcomes.slice(0, 3).map((o) => (
                           <span key={o} className="bg-white/10 border border-white/15 text-white/80 text-xs px-2.5 py-1 rounded-lg font-medium">
                             {o}
                           </span>
@@ -175,13 +166,11 @@ export default async function AcademyPage() {
               );
             })}
 
-            {courses.length < 6 && courses.length % 3 !== 0 && (
-              <div className="hidden lg:flex relative rounded-3xl overflow-hidden bg-slate-50 border-2 border-dashed border-slate-200 items-center justify-center min-h-[400px]">
-                <div className="text-center p-8">
-                  <div className="text-5xl mb-4">🚀</div>
-                  <p className="font-black text-slate-400 text-lg">More tracks coming</p>
-                  <p className="text-slate-300 text-sm mt-1">Stay tuned</p>
-                </div>
+            {courses.length === 0 && (
+              <div className="col-span-full py-20 text-center">
+                <div className="w-24 h-24 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-6 text-5xl">🎓</div>
+                <h3 className="text-2xl font-black text-slate-900 mb-2">No tracks available yet</h3>
+                <p className="text-slate-500 max-w-sm mx-auto">We&apos;re currently preparing new industry-standard tracks. Check back soon or follow our socials for announcements.</p>
               </div>
             )}
           </div>

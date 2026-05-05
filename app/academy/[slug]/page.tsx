@@ -6,63 +6,19 @@ import { Footer } from "@/components/footer";
 import {
   Clock, Users, Award, CheckCircle2, BookOpen,
   Code2, Database, BarChart2, Layers, MonitorSmartphone,
-  GraduationCap, ArrowLeft,
+  GraduationCap, ArrowLeft, Shield,
 } from "lucide-react";
 import CohortEnrollCard from "./CohortEnrollCard";
 import Link from "next/link";
 
 export const revalidate = 60;
 
-const COURSE_META: Record<string, {
-  icon: React.ElementType;
-  gradient: string;
-  lightBg: string;
-  accent: string;
-  outcomes: string[];
-}> = {
-  "product-design": {
-    icon: Layers,
-    gradient: "from-rose-500 via-pink-500 to-fuchsia-600",
-    lightBg: "bg-rose-50",
-    accent: "text-rose-600",
-    outcomes: ["Design and prototype in Figma", "Build scalable design systems", "Conduct user research sessions", "Create high-fidelity mockups", "Run usability tests", "Present design rationale to stakeholders"],
-  },
-  "ui-ux-design": {
-    icon: MonitorSmartphone,
-    gradient: "from-violet-600 via-purple-600 to-indigo-600",
-    lightBg: "bg-violet-50",
-    accent: "text-violet-600",
-    outcomes: ["Map end-to-end user journeys", "Build wireframes and prototypes", "Apply UX heuristics and principles", "Conduct A/B tests and analyse results", "Create design portfolios", "Collaborate with cross-functional teams"],
-  },
-  "data-analysis": {
-    icon: BarChart2,
-    gradient: "from-amber-500 via-orange-500 to-red-500",
-    lightBg: "bg-amber-50",
-    accent: "text-amber-600",
-    outcomes: ["Excel power tools and pivot tables", "SQL for data querying", "Python basics for analysis", "Build interactive dashboards", "Statistical thinking for business", "Tell data stories with charts"],
-  },
-  "frontend-web-dev": {
-    icon: Code2,
-    gradient: "from-cyan-500 via-sky-500 to-blue-600",
-    lightBg: "bg-sky-50",
-    accent: "text-sky-600",
-    outcomes: ["Master HTML, CSS, and JavaScript", "Build responsive layouts", "React components and hooks", "Fetch APIs and manage state", "Deploy projects to the web", "Version control with Git & GitHub"],
-  },
-  "backend-web-dev": {
-    icon: Database,
-    gradient: "from-emerald-500 via-teal-500 to-green-600",
-    lightBg: "bg-emerald-50",
-    accent: "text-emerald-600",
-    outcomes: ["Build REST APIs with Node.js", "Design and query databases", "Authentication & JWT", "Handle file uploads & storage", "Write tests for backend code", "Deploy servers to the cloud"],
-  },
-};
-
-const FALLBACK_META = {
-  icon: GraduationCap,
-  gradient: "from-slate-600 to-slate-700",
-  lightBg: "bg-slate-50",
-  accent: "text-slate-600",
-  outcomes: [],
+const SLUG_ICONS: Record<string, React.ElementType> = {
+  "product-design": Layers,
+  "ui-ux-design": MonitorSmartphone,
+  "data-analysis": BarChart2,
+  "frontend-web-dev": Code2,
+  "backend-web-dev": Database,
 };
 
 export async function generateStaticParams() {
@@ -76,12 +32,23 @@ export default async function AcademyCourseDetailPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
+  const now = new Date();
 
   const course = await prisma.academyCourse.findUnique({
     where: { slug },
     include: {
       cohorts: {
-        include: { _count: { select: { enrollments: true } } },
+        where: { 
+          isActive: true,
+          OR: [
+            { startDate: { gt: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) } },
+            { startDate: null }
+          ]
+        },
+        include: { 
+          _count: { select: { enrollments: true } },
+          tutors: { select: { name: true } }
+        },
         orderBy: { startDate: "asc" },
       },
     },
@@ -91,27 +58,30 @@ export default async function AcademyCourseDetailPage({
 
   const session = await getSession().catch(() => null);
 
-  const meta = COURSE_META[course.slug] ?? FALLBACK_META;
-  const Icon = meta.icon;
+  const Icon = SLUG_ICONS[course.slug] ?? GraduationCap;
+  const gradient = course.gradient || "from-indigo-600 to-purple-600";
+  const lightBg = "bg-slate-50"; // Can be derived or added to DB
+  const accent = "text-indigo-600";
 
   // Parse curriculum modules
   const modules = Array.isArray(course.modules)
-    ? (course.modules as { id: string; title: string; videos: { id: string; title: string; duration: string; isFree: boolean }[] }[])
+    ? (course.modules as any[])
     : [];
 
-  // Build "what you'll learn" from meta outcomes > module videos fallback
-  const outcomes = meta.outcomes.length > 0
-    ? meta.outcomes
-    : modules
-        .flatMap((m) => m.videos.slice(0, 2).map((v) => v.title))
-        .slice(0, 8);
+  const outcomes = Array.isArray(course.outcomes)
+    ? (course.outcomes as string[])
+    : [];
+
+  const requirements = Array.isArray(course.requirements)
+    ? (course.requirements as string[])
+    : [];
 
   return (
     <main className="min-h-screen bg-slate-50">
       <Navbar theme="light" />
 
       {/* ── Hero ── */}
-      <section className={`pt-28 pb-0 px-4 sm:px-6 bg-gradient-to-br ${meta.gradient} relative overflow-hidden`}>
+      <section className={`pt-28 pb-0 px-4 sm:px-6 bg-gradient-to-br ${gradient} relative overflow-hidden`}>
         <div className="absolute inset-0 bg-black/25" />
         <div className="absolute -top-32 -right-32 w-[500px] h-[500px] bg-white/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute bottom-0 left-16 w-64 h-64 bg-black/10 rounded-full blur-2xl" />
@@ -185,8 +155,8 @@ export default async function AcademyCourseDetailPage({
                 <div className="grid sm:grid-cols-2 gap-4">
                   {outcomes.map((item, i) => (
                     <div key={i} className="flex items-start gap-3">
-                      <div className={`w-5 h-5 rounded-full ${meta.lightBg} flex items-center justify-center shrink-0 mt-0.5`}>
-                        <CheckCircle2 className={`w-3.5 h-3.5 ${meta.accent}`} />
+                      <div className={`w-5 h-5 rounded-full ${lightBg} flex items-center justify-center shrink-0 mt-0.5`}>
+                        <CheckCircle2 className={`w-3.5 h-3.5 ${accent}`} />
                       </div>
                       <span className="text-slate-700 text-sm leading-snug font-medium">{item}</span>
                     </div>
@@ -205,34 +175,55 @@ export default async function AcademyCourseDetailPage({
                 </h2>
                 <div className="space-y-3">
                   {modules.map((mod, mi) => (
-                    <details key={mod.id} className="group rounded-2xl border border-slate-100 overflow-hidden">
+                    <details key={mi} className="group rounded-2xl border border-slate-100 overflow-hidden">
                       <summary className="flex items-center justify-between px-6 py-4 cursor-pointer select-none bg-slate-50 hover:bg-slate-100 transition-colors list-none">
                         <div>
                           <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Module {mi + 1}</span>
                           <p className="font-bold text-slate-900">{mod.title}</p>
                         </div>
-                        <span className="text-slate-400 text-xs font-bold shrink-0 ml-3">{mod.videos.length} lessons</span>
+                        <span className="text-slate-400 text-xs font-bold shrink-0 ml-3">{mod.lessons?.length || 0} lessons</span>
                       </summary>
-                      <ul className="px-6 pb-4 space-y-2 border-t border-slate-100 pt-3 bg-white">
-                        {mod.videos.map((v) => (
-                          <li key={v.id} className="flex items-center justify-between text-sm">
-                            <div className="flex items-center gap-2 text-slate-600">
-                              <BookOpen className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-                              {v.title}
-                              {v.isFree && <span className="text-green-500 text-xs font-bold bg-green-50 px-2 py-0.5 rounded-full">Free</span>}
-                            </div>
-                            <span className="text-slate-400 text-xs shrink-0 ml-3">{v.duration}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      {mod.lessons && (
+                        <ul className="px-6 pb-4 space-y-2 border-t border-slate-100 pt-3 bg-white">
+                          {mod.lessons.map((v: any, vi: number) => (
+                            <li key={vi} className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2 text-slate-600">
+                                <BookOpen className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                                {v.title}
+                              </div>
+                              <span className="text-slate-400 text-xs shrink-0 ml-3">{v.duration}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
                     </details>
                   ))}
                 </div>
               </div>
             )}
 
+            {/* Requirements */}
+            {requirements.length > 0 && (
+              <div className="bg-slate-900 rounded-3xl p-8 border border-white/5 shadow-xl">
+                <h2 className="text-2xl font-black text-white mb-6 flex items-center gap-2">
+                  <Shield className="w-6 h-6 text-amber-500" />
+                  Prerequisites
+                </h2>
+                <div className="space-y-3">
+                  {requirements.map((req, i) => (
+                    <div key={i} className="flex items-start gap-3">
+                      <div className="w-5 h-5 rounded-full bg-amber-500/10 flex items-center justify-center shrink-0 mt-0.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-amber-500" />
+                      </div>
+                      <span className="text-slate-300 text-sm font-medium">{req}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Academy Promise */}
-            <div className={`rounded-3xl p-8 border ${meta.lightBg} border-slate-100`}>
+            <div className={`rounded-3xl p-8 border ${lightBg} border-slate-100`}>
               <h3 className="font-black text-slate-900 text-xl mb-5">The Academy Promise</h3>
               <div className="grid sm:grid-cols-2 gap-3">
                 {[
@@ -244,7 +235,7 @@ export default async function AcademyCourseDetailPage({
                   "Dedicated support channel for all questions",
                 ].map((item) => (
                   <div key={item} className="flex items-start gap-3 text-slate-700 text-sm">
-                    <CheckCircle2 className={`w-4 h-4 ${meta.accent} shrink-0 mt-0.5`} />
+                    <CheckCircle2 className={`w-4 h-4 ${accent} shrink-0 mt-0.5`} />
                     <span className="font-medium">{item}</span>
                   </div>
                 ))}
@@ -255,22 +246,21 @@ export default async function AcademyCourseDetailPage({
           {/* ── Right: Enroll Card ── */}
           <div className="lg:col-span-1">
             <CohortEnrollCard
-              course={{ id: course.id, title: course.title, slug: course.slug, price: course.price }}
+              course={{ id: course.id, title: course.title, slug: course.slug, price: course.price, basePrice: course.basePrice }}
               cohorts={course.cohorts.map((c) => ({
                 id: c.id,
                 name: c.name,
-                tutorName: c.tutorName,
                 startDate: c.startDate?.toISOString() ?? null,
                 endDate: c.endDate?.toISOString() ?? null,
                 maxStudents: c.maxStudents,
-                price: c.price,
                 partPaymentEnabled: c.partPaymentEnabled,
                 partPaymentPercent: c.partPaymentPercent,
                 enrolledCount: c._count.enrollments,
+                tutors: c.tutors,
               }))}
               userId={session?.user.id ?? null}
               userEmail={session?.user.email ?? null}
-              gradient={meta.gradient}
+              gradient={gradient}
             />
           </div>
         </div>

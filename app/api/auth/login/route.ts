@@ -20,7 +20,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Not a creator account" }, { status: 403 });
     }
 
-    await createSession(user.id);
+    await createSession(user.id, "creator");
 
     const profile = await prisma.creatorProfile.findUnique({ where: { userId: user.id } });
     return NextResponse.json({ success: true, needsOnboarding: !profile });

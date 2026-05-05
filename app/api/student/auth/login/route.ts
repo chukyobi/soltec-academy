@@ -5,16 +5,24 @@ import { verifyPassword, createSession } from "@/lib/auth";
 export async function POST(req: Request) {
   try {
     const body = await req.json().catch(() => null);
-    if (!body?.email || !body?.password) {
-      return NextResponse.json({ error: "Email and password are required" }, { status: 400 });
+    const identifier = (body?.identifier || body?.email || "").toLowerCase().trim();
+    const password = body?.password;
+
+    if (!identifier || !password) {
+      return NextResponse.json({ error: "Email/Student ID and password are required" }, { status: 400 });
     }
 
-    const { email, password } = body;
-
-    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase().trim() } });
+    const user = await prisma.user.findFirst({ 
+      where: {
+        OR: [
+          { email: identifier },
+          { studentId: { equals: identifier, mode: 'insensitive' } }
+        ]
+      }
+    });
 
     if (!user || !user.password) {
-      return NextResponse.json({ error: "No account found with that email" }, { status: 401 });
+      return NextResponse.json({ error: "No account found with that Email or Student ID" }, { status: 401 });
     }
 
     // Verify password — wrap in try/catch in case stored hash is malformed
@@ -22,8 +30,8 @@ export async function POST(req: Request) {
     try {
       valid = verifyPassword(password, user.password);
     } catch {
-      console.error("verifyPassword error — stored hash may be malformed for user:", email);
-      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 });
+      console.error("verifyPassword error — stored hash may be malformed for user:", identifier);
+      return NextResponse.json({ error: "Authentication failed" }, { status: 401 });
     }
 
     if (!valid) {
@@ -37,7 +45,7 @@ export async function POST(req: Request) {
       );
     }
 
-    await createSession(user.id);
+    await createSession(user.id, "student");
 
     return NextResponse.json({
       success: true,

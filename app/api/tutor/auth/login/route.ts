@@ -21,8 +21,17 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 });
     }
 
-    await createSession(user.id);
-    return NextResponse.json({ ok: true, user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+    await createSession(user.id, "tutor");
+    return NextResponse.json({ 
+      ok: true, 
+      user: { 
+        id: user.id, 
+        name: user.name, 
+        email: user.email, 
+        role: user.role,
+        needsPasswordChange: user.needsPasswordChange
+      } 
+    });
   } catch (err) {
     console.error("Tutor login error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

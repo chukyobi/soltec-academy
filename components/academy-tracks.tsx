@@ -25,6 +25,8 @@ interface Course {
   maxStudents: number;
   cohortName: string | null;
   cohortPrice: number | null;
+  gradient: string;
+  tag: string;
 }
 
 interface Props { courses: Course[] }
@@ -37,19 +39,12 @@ const SLUG_ICONS: Record<string, ElementType> = {
   'backend-web-dev': FiDatabase,
 };
 
-const SLUG_THEMES: Record<string, {
-  bg: string; border: string; badge: string;
-  iconBg: string; iconColor: string;
-  cta: string; pill: string;
-}> = {
-  'product-design':   { bg: 'bg-rose-50',    border: 'border-rose-100',    badge: 'bg-rose-100 text-rose-700',    iconBg: 'bg-gradient-to-br from-rose-500 to-fuchsia-600',    iconColor: 'text-white', cta: 'bg-gradient-to-r from-rose-500 to-fuchsia-600',   pill: 'bg-rose-100 text-rose-600' },
-  'ui-ux-design':     { bg: 'bg-violet-50',  border: 'border-violet-100',  badge: 'bg-violet-100 text-violet-700',  iconBg: 'bg-gradient-to-br from-violet-500 to-indigo-600',  iconColor: 'text-white', cta: 'bg-gradient-to-r from-violet-500 to-indigo-600',  pill: 'bg-violet-100 text-violet-600' },
-  'data-analysis':    { bg: 'bg-amber-50',   border: 'border-amber-100',   badge: 'bg-amber-100 text-amber-700',   iconBg: 'bg-gradient-to-br from-amber-500 to-orange-500',   iconColor: 'text-white', cta: 'bg-gradient-to-r from-amber-500 to-orange-500',   pill: 'bg-amber-100 text-amber-600' },
-  'frontend-web-dev': { bg: 'bg-sky-50',     border: 'border-sky-100',     badge: 'bg-sky-100 text-sky-700',     iconBg: 'bg-gradient-to-br from-sky-500 to-blue-600',     iconColor: 'text-white', cta: 'bg-gradient-to-r from-sky-500 to-blue-600',    pill: 'bg-sky-100 text-sky-600' },
-  'backend-web-dev':  { bg: 'bg-emerald-50', border: 'border-emerald-100', badge: 'bg-emerald-100 text-emerald-700', iconBg: 'bg-gradient-to-br from-emerald-500 to-teal-600', iconColor: 'text-white', cta: 'bg-gradient-to-r from-emerald-500 to-teal-600', pill: 'bg-emerald-100 text-emerald-600' },
+const FALLBACK_THEME = { 
+  bg: 'bg-indigo-50', 
+  border: 'border-indigo-100', 
+  badge: 'bg-indigo-100 text-indigo-700', 
+  pill: 'bg-indigo-100 text-indigo-600' 
 };
-
-const FALLBACK_THEME = { bg: 'bg-indigo-50', border: 'border-indigo-100', badge: 'bg-indigo-100 text-indigo-700', iconBg: 'bg-gradient-to-br from-indigo-500 to-purple-600', iconColor: 'text-white', cta: 'bg-gradient-to-r from-indigo-500 to-purple-600', pill: 'bg-indigo-100 text-indigo-600' };
 
 function fmtDate(iso: string | null) {
   if (!iso) return '--';
@@ -62,7 +57,23 @@ function fmtNGN(n: number) {
 export function AcademyTracks({ courses }: Props) {
   const [hovered, setHovered] = useState<string | null>(null);
 
-  if (courses.length === 0) return null;
+  if (courses.length === 0) {
+    return (
+      <section className="py-24 bg-white text-center">
+        <div className="max-w-2xl mx-auto px-4">
+          <div className="w-20 h-20 bg-indigo-50 rounded-3xl flex items-center justify-center mx-auto mb-6 text-4xl">🚀</div>
+          <h2 className="text-3xl font-black text-slate-900 mb-3">Launching Soon!</h2>
+          <p className="text-slate-500 mb-8">
+            We are curating high-impact cohorts with top industry mentors. 
+            Sign up to be the first to know when we launch our next tracks.
+          </p>
+          <Link href="/student/signup" className="inline-flex items-center gap-2 px-8 py-4 bg-indigo-600 text-white font-black rounded-2xl shadow-xl hover:bg-indigo-500 transition-all">
+            Get Notified <FiZap className="w-4 h-4" />
+          </Link>
+        </div>
+      </section>
+    );
+  }
 
   // Priority: active > upcoming > none — show only top 3
   const ordered = [
@@ -122,21 +133,21 @@ export function AcademyTracks({ courses }: Props) {
 
         {/* 3-card grid */}
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {ordered.map((course) => {
-            const Icon = SLUG_ICONS[course.slug] ?? FiCode;
-            const theme = SLUG_THEMES[course.slug] ?? FALLBACK_THEME;
-            const isHov = hovered === course.id;
-            const spotsLeft = course.maxStudents - course.enrolledCount;
-            const pct = Math.min(100, Math.round((course.enrolledCount / course.maxStudents) * 100));
+            {ordered.map((course) => {
+              const Icon = SLUG_ICONS[course.slug] ?? RiGraduationCapLine;
+              const isHov = hovered === course.id;
+              const spotsLeft = course.maxStudents - course.enrolledCount;
+              const pct = Math.min(100, Math.round((course.enrolledCount / course.maxStudents) * 100));
 
-            return (
-              <Link
-                key={course.id}
-                href={`/academy/${course.slug}`}
-                onMouseEnter={() => setHovered(course.id)}
-                onMouseLeave={() => setHovered(null)}
-                className={`group relative flex flex-col rounded-3xl border overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl ${theme.bg} ${theme.border} ${isHov ? 'shadow-xl' : 'shadow-md'}`}
-              >
+              return (
+                <Link
+                  key={course.id}
+                  href={`/academy/${course.slug}`}
+                  onMouseEnter={() => setHovered(course.id)}
+                  onMouseLeave={() => setHovered(null)}
+                  className={`group relative flex flex-col rounded-3xl border overflow-hidden transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl bg-white border-slate-100 ${isHov ? 'shadow-xl' : 'shadow-md'}`}
+                >
+                  <div className={`absolute inset-0 opacity-[0.03] bg-gradient-to-br ${course.gradient}`} />
                 {/* Status ribbon */}
                 {course.cohortStatus === 'active' && (
                   <div className="absolute top-4 right-4 z-10 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-green-500 text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-green-500/30">
@@ -149,16 +160,16 @@ export function AcademyTracks({ courses }: Props) {
                   </div>
                 )}
 
-                <div className="p-7 flex flex-col flex-1">
-                  {/* Icon */}
-                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 shadow-lg ${theme.iconBg} transition-transform group-hover:scale-110 duration-300`}>
-                    <Icon className={`w-7 h-7 ${theme.iconColor}`} />
-                  </div>
+                  <div className="p-7 flex flex-col flex-1">
+                    {/* Icon */}
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 shadow-lg bg-gradient-to-br ${course.gradient} transition-transform group-hover:scale-110 duration-300`}>
+                      <Icon className="w-7 h-7 text-white" />
+                    </div>
 
-                  {/* Level */}
-                  <span className={`self-start text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 ${theme.pill}`}>
-                    {course.level}
-                  </span>
+                    {/* Tag */}
+                    <span className="self-start text-[10px] font-black uppercase tracking-widest px-2.5 py-1 rounded-full mb-3 bg-indigo-50 text-indigo-600">
+                      {course.tag}
+                    </span>
 
                   {/* Title + desc */}
                   <h3 className="text-xl font-black text-slate-900 leading-tight mb-2">
@@ -187,7 +198,7 @@ export function AcademyTracks({ courses }: Props) {
                         </div>
                         <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
                           <div
-                            className={`h-full rounded-full transition-all ${theme.cta}`}
+                            className={`h-full rounded-full transition-all bg-indigo-600`}
                             style={{ width: `${pct}%` }}
                           />
                         </div>
@@ -195,21 +206,21 @@ export function AcademyTracks({ courses }: Props) {
                     </div>
                   )}
 
-                  {/* Footer */}
-                  <div className="flex items-center justify-between pt-4 border-t border-black/5">
-                    <div>
-                      <p className="text-slate-900 font-black text-lg">
-                        {course.cohortPrice ? fmtNGN(course.cohortPrice) : course.price}
-                      </p>
-                      <p className="text-slate-400 text-xs flex items-center gap-1 mt-0.5">
-                        <FiClock className="w-3 h-3" /> {course.duration}
-                      </p>
+                    {/* Footer */}
+                    <div className="flex items-center justify-between pt-4 border-t border-slate-100">
+                      <div>
+                        <p className="text-slate-900 font-black text-lg">
+                          {course.cohortPrice ? fmtNGN(course.cohortPrice) : course.price}
+                        </p>
+                        <p className="text-slate-400 text-xs flex items-center gap-1 mt-0.5">
+                          <FiClock className="w-3 h-3" /> {course.duration}
+                        </p>
+                      </div>
+                      <div className={`px-4 py-2.5 rounded-xl text-white text-sm font-black flex items-center gap-2 transition-all group-hover:gap-3 bg-gradient-to-r ${course.gradient} shadow-lg`}>
+                        {course.cohortStatus === 'active' ? 'Enroll' : 'Details'}
+                        <FiArrowRight className="w-4 h-4" />
+                      </div>
                     </div>
-                    <div className={`px-4 py-2.5 rounded-xl text-white text-sm font-black flex items-center gap-2 transition-all group-hover:gap-3 ${theme.cta} shadow-lg`}>
-                      {course.cohortStatus === 'active' ? 'Enroll' : 'Details'}
-                      <FiArrowRight className="w-4 h-4" />
-                    </div>
-                  </div>
                 </div>
               </Link>
             );

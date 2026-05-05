@@ -13,8 +13,16 @@ const NAV = [
 ];
 
 
+import { redirect } from "next/navigation";
+import { LogoutButton } from "@/components/admin/LogoutButton";
+
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const session = await getSession().catch(() => null);
+  const session = await getSession("admin").catch(() => null);
+
+  // Protected route: Redirect to login if no session or not admin
+  if (!session || session.user.role !== "ADMIN") {
+    redirect("/admin/login");
+  }
 
   return (
     <div className="flex min-h-screen bg-slate-950">
@@ -34,17 +42,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
         </div>
 
         {/* Admin badge */}
-        {session && (
-          <div className="mx-4 mt-4 bg-gradient-to-r from-red-600/20 to-rose-600/20 border border-red-500/20 rounded-xl p-3 flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-rose-500 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
-              {(session.user.name ?? session.user.email ?? "A")[0].toUpperCase()}
-            </div>
-            <div className="overflow-hidden">
-              <p className="text-white text-xs font-semibold truncate">{session.user.name ?? "Admin"}</p>
-              <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest">Administrator</p>
-            </div>
+        <div className="mx-4 mt-4 bg-gradient-to-r from-red-600/20 to-rose-600/20 border border-red-500/20 rounded-xl p-3 flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-rose-500 rounded-full flex items-center justify-center text-white font-bold text-sm shrink-0">
+            {(session.user.name ?? session.user.email ?? "A")[0].toUpperCase()}
           </div>
-        )}
+          <div className="overflow-hidden">
+            <p className="text-white text-xs font-semibold truncate">{session.user.name ?? "Admin"}</p>
+            <p className="text-red-400 text-[10px] font-bold uppercase tracking-widest">Administrator</p>
+          </div>
+        </div>
 
         {/* Nav */}
         <nav className="flex-1 px-3 py-4 space-y-0.5">
@@ -72,6 +78,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <Bell className="w-4 h-4" />
             <span className="text-sm font-medium">Back to Site</span>
           </Link>
+          <div className="pt-2">
+            <LogoutButton />
+          </div>
         </div>
       </aside>
 
@@ -85,7 +94,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               {new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
             </span>
             <div className="w-8 h-8 bg-gradient-to-br from-red-500 to-rose-500 rounded-full flex items-center justify-center text-white font-bold text-sm shadow-lg shadow-red-500/20">
-              A
+              {(session.user.name ?? "A")[0].toUpperCase()}
             </div>
           </div>
         </header>

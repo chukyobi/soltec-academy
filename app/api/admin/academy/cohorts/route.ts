@@ -28,40 +28,33 @@ export async function POST(req: Request) {
     await requireAdmin();
     const body = await req.json();
     const {
-      name, courseId, tutorUserId,
+      name, courseId,
       startDate, endDate,
-      maxStudents, price, partPaymentEnabled, partPaymentPercent,
+      maxStudents, partPaymentEnabled, partPaymentPercent,
+      tutorIds, // NEW: Expecting an array of tutor IDs
     } = body;
 
     if (!name || !courseId) {
       return NextResponse.json({ error: "name and courseId are required" }, { status: 400 });
     }
 
-    // Resolve tutor name from user record if tutorUserId is given
-    let tutorName: string | null = null;
-    if (tutorUserId) {
-      const tutor = await prisma.user.findUnique({ where: { id: tutorUserId } });
-      if (!tutor || tutor.role !== "TUTOR") {
-        return NextResponse.json({ error: "Invalid tutor user ID" }, { status: 400 });
-      }
-      tutorName = tutor.name ?? tutor.email;
-    }
-
     const cohort = await prisma.cohort.create({
       data: {
         name,
         courseId,
-        tutorId: tutorUserId ?? null,
-        tutorName,
         startDate: startDate ? new Date(startDate) : null,
         endDate: endDate ? new Date(endDate) : null,
         maxStudents: maxStudents ?? 20,
-        price: price ?? 100000,
         partPaymentEnabled: partPaymentEnabled ?? true,
         partPaymentPercent: partPaymentPercent ?? 50,
+        // NEW: Connect multiple tutors via many-to-many relationship
+        tutors: tutorIds && Array.isArray(tutorIds) ? {
+          connect: tutorIds.map((id: string) => ({ id }))
+        } : undefined,
       },
       include: {
         course: { select: { title: true, slug: true } },
+        tutors: { select: { id: true, name: true } },
       },
     });
 

@@ -5,7 +5,7 @@ import { getSession, hashPassword } from "@/lib/auth";
 // POST /api/tutor/auth/setup – Update password for new tutors
 export async function POST(req: Request) {
   try {
-    const session = await getSession();
+    const session = await getSession("tutor").catch(() => null) as any;
     if (!session || (session.user.role !== "TUTOR" && session.user.role !== "ADMIN")) {
       return NextResponse.json({ error: "UNAUTHORIZED" }, { status: 401 });
     }

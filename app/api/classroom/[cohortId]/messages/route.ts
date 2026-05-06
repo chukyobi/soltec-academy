@@ -8,10 +8,13 @@ import { pusherServer } from "@/lib/pusher";
 export async function GET(req: Request, { params }: { params: Promise<{ cohortId: string }> }) {
   try {
     const { cohortId } = await params;
-    const session = await getSession().catch(() => null) ?? await getSession("tutor").catch(() => null);
+    const studentSession = await getSession("student").catch(() => null);
+    const tutorSession = await getSession("tutor").catch(() => null);
+    const session = (studentSession || tutorSession) as any;
+
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const messages = await (prisma.classroomMessage as any).findMany({
+    const messages = await (prisma as any).classroomMessage.findMany({
       where: { cohortId },
       include: { 
         user: { select: { id: true, name: true, role: true, studentId: true, image: true } },
@@ -30,13 +33,16 @@ export async function GET(req: Request, { params }: { params: Promise<{ cohortId
 export async function POST(req: Request, { params }: { params: Promise<{ cohortId: string }> }) {
   try {
     const { cohortId } = await params;
-    const session = await getSession().catch(() => null) ?? await getSession("tutor").catch(() => null);
+    const studentSession = await getSession("student").catch(() => null);
+    const tutorSession = await getSession("tutor").catch(() => null);
+    const session = (studentSession || tutorSession) as any;
+
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const { content, mentions } = await req.json();
     if (!content?.trim()) return NextResponse.json({ error: "Message cannot be empty" }, { status: 400 });
 
-    const message = await (prisma.classroomMessage as any).create({
+    const message = await (prisma as any).classroomMessage.create({
       data: { 
         cohortId, 
         userId: session.userId, 
@@ -67,7 +73,6 @@ export async function POST(req: Request, { params }: { params: Promise<{ cohortI
       }
     } catch (pErr) {
       console.error("Pusher Trigger Failed:", pErr);
-      // Don't fail the request if Pusher is down or misconfigured
     }
 
     return NextResponse.json(message, { status: 201 });

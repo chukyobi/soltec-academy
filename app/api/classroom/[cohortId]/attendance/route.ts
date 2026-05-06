@@ -7,14 +7,17 @@ import { serverError } from "@/lib/api-error";
 export async function GET(req: Request, { params }: { params: Promise<{ cohortId: string }> }) {
   try {
     const { cohortId } = await params;
-    const session = await getSession().catch(() => null) ?? await getSession("tutor").catch(() => null);
+    const studentSession = await getSession("student").catch(() => null);
+    const tutorSession = await getSession("tutor").catch(() => null);
+    const session = (studentSession || tutorSession) as any;
+
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const sessions = await prisma.attendanceSession.findMany({
+    const sessions = await (prisma as any).attendanceSession.findMany({
       where: { cohortId },
       include: { records: { include: { user: { select: { id: true, name: true, studentId: true } } } } },
       orderBy: { openedAt: "desc" },
-    } as any);
+    });
     return NextResponse.json(sessions);
   } catch (err) {
     return serverError(err, "GET attendance");
@@ -27,19 +30,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ cohortI
     const { cohortId } = await params;
     const tutorSession = await getSession("tutor").catch(() => null);
     const studentSession = await getSession().catch(() => null);
-    const session = tutorSession ?? studentSession;
+    const session = (tutorSession || studentSession) as any;
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
     const body = await req.json();
 
     // Tutor opens a session
     if (body.action === "open" && (session.user.role === "TUTOR" || session.user.role === "ADMIN")) {
-      const existing = await prisma.attendanceSession.findFirst({
+      const existing = await (prisma as any).attendanceSession.findFirst({
         where: { cohortId, closedAt: null },
       });
       if (existing) return NextResponse.json({ error: "An attendance session is already open" }, { status: 409 });
 
-      const s = await (prisma.attendanceSession as any).create({
+      const s = await (prisma as any).attendanceSession.create({
         data: { cohortId, label: body.label ?? null },
       });
       return NextResponse.json(s, { status: 201 });
@@ -47,7 +50,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ cohortI
 
     // Tutor closes a session
     if (body.action === "close" && (session.user.role === "TUTOR" || session.user.role === "ADMIN")) {
-      const s = await (prisma.attendanceSession as any).update({
+      const s = await (prisma as any).attendanceSession.update({
         where: { id: body.sessionId },
         data: { closedAt: new Date() },
       });
@@ -56,12 +59,12 @@ export async function POST(req: Request, { params }: { params: Promise<{ cohortI
 
     // Student checks in
     if (body.action === "checkin") {
-      const openSession = await prisma.attendanceSession.findFirst({
+      const openSession = await (prisma as any).attendanceSession.findFirst({
         where: { cohortId, closedAt: null },
       });
       if (!openSession) return NextResponse.json({ error: "No attendance session is open right now" }, { status: 400 });
 
-      const record = await (prisma.attendanceRecord as any).upsert({
+      const record = await (prisma as any).attendanceRecord.upsert({
         where: { sessionId_userId: { sessionId: openSession.id, userId: session.userId } },
         update: {},
         create: { sessionId: openSession.id, userId: session.userId },

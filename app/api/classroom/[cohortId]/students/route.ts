@@ -7,13 +7,13 @@ import { serverError } from "@/lib/api-error";
 export async function GET(req: Request, { params }: { params: Promise<{ cohortId: string }> }) {
   try {
     const { cohortId } = await params;
-    const studentSession = await getSession().catch(() => null);
+    const studentSession = await getSession("student").catch(() => null);
     const tutorSession = await getSession("tutor").catch(() => null);
-    const session = studentSession ?? tutorSession;
+    const session = (studentSession || tutorSession) as any;
 
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const enrollments = await prisma.cohortEnrollment.findMany({
+    const enrollments = await (prisma.cohortEnrollment as any).findMany({
       where: { cohortId },
       include: {
         user: {
@@ -24,7 +24,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ cohortId
 
     // If student, return simplified list for mentions
     if (session.user.role === "STUDENT" && !tutorSession) {
-      const simplified = enrollments.map(e => ({
+      const simplified = enrollments.map((e: any) => ({
         id: e.user.id,
         name: e.user.name,
         image: e.user.image,
@@ -36,7 +36,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ cohortId
     const statuses = await (prisma as any).studentClassroomStatus.findMany({ where: { cohortId } });
     const statusMap = Object.fromEntries(statuses.map((s: any) => [s.userId, s]));
 
-    const data = enrollments.map(e => ({
+    const data = enrollments.map((e: any) => ({
       ...e.user,
       status: statusMap[e.user.id]?.status ?? "ACTIVE",
       statusReason: statusMap[e.user.id]?.reason ?? null,

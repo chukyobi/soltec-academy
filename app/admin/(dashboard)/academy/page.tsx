@@ -21,6 +21,7 @@ export default async function AdminAcademyPage() {
     prisma.cohort.findMany({
       include: {
         course: { select: { id: true, title: true, slug: true, color: true } },
+        tutors: { select: { id: true, name: true } },
         _count: { select: { enrollments: true } },
       },
       orderBy: { startDate: "asc" },

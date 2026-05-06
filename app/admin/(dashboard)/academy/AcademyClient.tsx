@@ -37,17 +37,26 @@ const GRADIENTS = [
 ];
 
 export interface CourseRow {
-  id: string; title: string; slug: string; level: string;
-  duration: string; price: string; color: string;
-  description: string; basePrice: number;
+  id: string;
+  title: string;
+  slug: string;
+  level: string;
+  duration: string;
+  price: string;
+  color: string;
+  description: string;
+  basePrice: number;
   isActive: boolean;
   isProgramming: boolean;
-  instructorName?: string;
-  tag?: string;
-  gradient?: string;
-  outcomes?: any;
-  requirements?: any;
-  modules?: any;
+  instructorName: string | null;
+  instructorAvatar?: string | null;
+  instructorRole?: string | null;
+  thumbnail: string | null;
+  tag: string;
+  gradient: string;
+  outcomes: any;
+  requirements: any;
+  modules: any;
   _count: { cohorts: number };
 }
 

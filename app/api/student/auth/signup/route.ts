@@ -39,10 +39,8 @@ export async function POST(req: Request) {
     const expiresAt = new Date(Date.now() + 15 * 60_000);
     await prisma.emailVerification.create({ data: { userId: user.id, otp, expiresAt } });
 
-    // In production: send OTP via email. Dev: return in response.
-    const devOtp = process.env.NODE_ENV !== "production" ? otp : undefined;
-
-    return NextResponse.json({ success: true, userId: user.id, devOtp }, { status: 201 });
+    // TODO: In production, send OTP via email mailer (currently always returned for display)
+    return NextResponse.json({ success: true, userId: user.id, devOtp: otp }, { status: 201 });
   } catch (err) {
     console.error("Student signup error:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });

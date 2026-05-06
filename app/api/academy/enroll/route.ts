@@ -84,9 +84,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: true, redirect: "/student/profile" }, { status: 201 });
     } else {
       // NEW STUDENT: Generate ID and store in PendingStudent
-      const year = new Date().getFullYear();
-      const random = crypto.randomBytes(2).toString("hex").toUpperCase();
-      const studentId = `STU-${year}-${random}`;
+      // Format: STU-SOL-XXXX-TEC (XXXX = random alphanumeric)
+      const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no confusable chars (0,1,I,O)
+      const random = Array.from(crypto.randomBytes(4))
+        .map((b) => chars[b % chars.length])
+        .join("");
+      const studentId = `STU-SOL-${random}-TEC`;
 
       await prisma.pendingStudent.create({
         data: {

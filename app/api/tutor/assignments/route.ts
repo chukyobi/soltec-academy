@@ -13,13 +13,18 @@ export async function POST(req: Request) {
     }
 
     // Verify tutor owns this cohort
-    const cohort = await prisma.cohort.findUnique({ where: { id: cohortId } });
+    const cohort = await (prisma.cohort as any).findUnique({ 
+      where: { id: cohortId },
+      include: { tutors: { select: { id: true } } }
+    });
     if (!cohort) return NextResponse.json({ error: "Cohort not found" }, { status: 404 });
-    if (session.user.role === "TUTOR" && cohort.tutorId !== session.user.id) {
+    
+    const isTutor = (cohort.tutors as any[]).some((t: any) => t.id === session.userId) || session.user.role === "ADMIN";
+    if (!isTutor) {
       return NextResponse.json({ error: "Not your cohort" }, { status: 403 });
     }
 
-    const assignment = await prisma.assignment.create({
+    const assignment = await (prisma.assignment as any).create({
       data: { title, description, cohortId },
     });
 

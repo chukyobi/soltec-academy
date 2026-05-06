@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { hashPassword, generateOtp } from "@/lib/auth";
+import { serverError } from "@/lib/api-error";
 
 export async function POST(req: Request) {
   try {
@@ -16,12 +17,16 @@ export async function POST(req: Request) {
     });
 
     if (!pending || pending.email !== email) {
-      return NextResponse.json({ error: "Invalid Student ID or Email. Please ensure you have paid for a track." }, { status: 403 });
+      return NextResponse.json({
+        error: "We couldn't verify your Student ID or email. Please ensure you've completed your track payment and are using the correct details."
+      }, { status: 403 });
     }
 
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
-      return NextResponse.json({ error: "An account with this email already exists" }, { status: 409 });
+      return NextResponse.json({
+        error: "An account with this email already exists. Please sign in instead."
+      }, { status: 409 });
     }
 
     const hashed = hashPassword(password);
@@ -31,7 +36,7 @@ export async function POST(req: Request) {
         password: hashed, 
         name: name ?? email.split("@")[0], 
         role: "STUDENT",
-        studentId: studentId
+        studentId,
       },
     });
 
@@ -42,7 +47,6 @@ export async function POST(req: Request) {
     // TODO: In production, send OTP via email mailer (currently always returned for display)
     return NextResponse.json({ success: true, userId: user.id, devOtp: otp }, { status: 201 });
   } catch (err) {
-    console.error("Student signup error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return serverError(err, "Student signup", "signup");
   }
 }

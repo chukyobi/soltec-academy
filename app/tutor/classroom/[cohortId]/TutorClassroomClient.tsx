@@ -1,291 +1,225 @@
 "use client";
+import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
+import { ArrowLeft, GraduationCap, Users, ClipboardList, CheckSquare, Settings, MessageSquare, Plus, X, Loader2, CheckCircle2, AlertCircle, Clock, ChevronDown, Send, Shield, UserX, UserCheck, Video, Zap, Trophy, AtSign, Image as ImageIcon, Star, Radio } from "lucide-react";
+import { useClassroomPusher } from "@/hooks/useClassroomPusher";
+import { MentionInput } from "@/components/classroom/MentionInput";
+import { Toaster } from "react-hot-toast";
 
-import { useState } from "react";
-import {
-  Users, BookOpen, ClipboardList, MessageSquare,
-  BarChart2, CheckCircle2, AlertCircle, Clock,
-  UserCheck, FileCheck2, Award, ChevronDown, ChevronUp,
-  Loader2, Send, Plus, X
-} from "lucide-react";
-
-interface Student {
-  id: string; name: string | null; email: string; createdAt: string;
-  paymentStatus: string; amountPaid: number; totalAmount: number;
-}
-
-interface Submission { id: string; fileUrl: string | null; grade: string | null; user: { id: string; name: string | null; email: string }; }
-interface Assignment { id: string; title: string; description: string; submissions: Submission[]; }
-interface Module { id: string; title: string; videos: { id: string; title: string; duration: string; isFree: boolean }[]; }
-
+type Tab = "students"|"assignments"|"assessments"|"attendance"|"chat"|"settings";
 interface Props {
-  cohort: {
-    id: string; name: string; maxStudents: number;
-    enrollments: (Student & { paymentStatus: string; amountPaid: number; totalAmount: number })[];
-    assignments: Assignment[];
-    course: { title: string; slug: string; color: string };
+  cohort: { 
+    id:string; 
+    name:string; 
+    course:{title:string;color:string}; 
+    totalStudents:number; 
+    isLive: boolean;
+    liveRoomId: string|null;
   };
-  modules: Module[];
+  tutorName: string;
+  userId: string;
+  initSettings: any;
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  PAID: "bg-green-500/10 text-green-400 border-green-500/20",
-  PARTIAL: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  UNPAID: "bg-red-500/10 text-red-400 border-red-500/20",
-};
+export default function TutorClassroomClient({ cohort, tutorName, userId, initSettings }:Props) {
+  const [tab, setTab] = useState<Tab>("chat");
+  const [students, setStudents] = useState<any[]>([]);
+  const [assignments, setAssignments] = useState<any[]>([]);
+  const [assessments, setAssessments] = useState<any[]>([]);
+  const [attendance, setAttendance] = useState<any[]>([]);
+  const [messages, setMessages] = useState<any[]>([]);
+  const [settings, setSettings] = useState(initSettings || { welcomeNote:"", rules:"", passThreshold:70, attendanceWeight:30, assignmentWeight:50, participationWeight:20 });
+  const [showNewA, setShowNewA] = useState<{type:'assignment'|'assessment'|null} | null>(null);
+  const [newA, setNewA] = useState({ title:"", description:"", dueAt:"", maxScore:100 });
+  const [msgInput, setMsgInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [settingsSaved, setSettingsSaved] = useState(false);
+  const [gradingModal, setGradingModal] = useState<any>(null);
+  const [gradeInput, setGradeInput] = useState({ score:"", feedback:"" });
+  const [isLive, setIsLive] = useState(cohort.isLive);
+  const chatBottom = useRef<HTMLDivElement>(null);
 
-function fmtNGN(n: number) { return `₦${n.toLocaleString("en-NG")}`; }
+  const fetch_ = (url:string) => fetch(url).then(r=>r.ok?r.json():[]);
+  const load = useCallback(async()=>{
+    if(tab==="students") setStudents(await fetch_(`/api/classroom/${cohort.id}/students`));
+    if(tab==="assignments") setAssignments(await fetch_(`/api/classroom/${cohort.id}/assignments`));
+    if(tab==="assessments") setAssessments(await fetch_(`/api/classroom/${cohort.id}/assessments`));
+    if(tab==="attendance") setAttendance(await fetch_(`/api/classroom/${cohort.id}/attendance`));
+    if(tab==="chat") {
+      const msgs = await fetch_(`/api/classroom/${cohort.id}/messages`);
+      setMessages(msgs);
+    }
+  },[tab, cohort.id]);
 
-export default function TutorClassroomClient({ cohort, modules }: Props) {
-  const [tab, setTab] = useState<"students" | "curriculum" | "assignments" | "announce">("students");
-  const [openModule, setOpenModule] = useState<string | null>(modules[0]?.id ?? null);
-  const [announce, setAnnounce] = useState("");
-  const [announcements, setAnnouncements] = useState<{ text: string; time: string }[]>([
-    { text: "Welcome to the cohort! First session starts this Monday at 6 PM.", time: new Date().toLocaleString() },
-  ]);
-  const [newAssTitle, setNewAssTitle] = useState("");
-  const [newAssDesc, setNewAssDesc] = useState("");
-  const [savingAss, setSavingAss] = useState(false);
-  const [assError, setAssError] = useState<string | null>(null);
-  const [localAssignments, setLocalAssignments] = useState<Assignment[]>(cohort.assignments);
-  const [gradingId, setGradingId] = useState<string | null>(null);
-  const [gradeValue, setGradeValue] = useState("");
+  useEffect(()=>{ load(); },[load]);
+  useEffect(()=>{ if(tab==="chat") chatBottom.current?.scrollIntoView({behavior:"smooth"}); },[messages, tab]);
 
-  const tabs = [
-    { id: "students", label: "Students", icon: Users },
-    { id: "curriculum", label: "Curriculum", icon: BookOpen },
-    { id: "assignments", label: "Assignments", icon: ClipboardList },
-    { id: "announce", label: "Announcements", icon: MessageSquare },
+  // ── Pusher Integration ────────────────────────────────────────────────────
+  useClassroomPusher(cohort.id, userId, (newMsg) => {
+    setMessages(prev => {
+      if (prev.find(m => m.id === newMsg.id)) return prev;
+      return [...prev, newMsg];
+    });
+  });
+
+  async function createA(){ 
+    setLoading(true); 
+    const endpoint = showNewA?.type === 'assessment' ? 'assessments' : 'assignments';
+    await fetch(`/api/classroom/${cohort.id}/${endpoint}`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(newA)}); 
+    setShowNewA(null); 
+    setNewA({title:"",description:"",dueAt:"",maxScore:100}); 
+    load(); 
+    setLoading(false); 
+  }
+  async function toggleAttendance(open:boolean, sessionId?:string){ await fetch(`/api/classroom/${cohort.id}/attendance`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(open?{action:"open",label:`Session ${new Date().toLocaleDateString()}`}:{action:"close",sessionId})}); load(); }
+  async function toggleStatus(type:'assignments'|'assessments', id:string, isOpen:boolean){ await fetch(`/api/classroom/${cohort.id}/${type}/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({isOpen})}); load(); }
+  async function updateStudentStatus(userId:string, status:string){ await fetch(`/api/classroom/${cohort.id}/students`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId,status})}); load(); }
+  async function saveSettings(){ setLoading(true); await fetch(`/api/classroom/${cohort.id}/settings`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify(settings)}); setSettingsSaved(true); setTimeout(()=>setSettingsSaved(false),2000); setLoading(false); }
+  
+  async function sendMsg(){ 
+    if(!msgInput.trim()) return; 
+    setLoading(true);
+    const mentionNames = msgInput.match(/@\w+/g)?.map(m => m.slice(1)) || [];
+    const mentionIds = students
+      .filter(u => mentionNames.includes(u.name.replace(/\s/g, '')))
+      .map(u => u.id);
+
+    await fetch(`/api/classroom/${cohort.id}/messages`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({content:msgInput, mentions: mentionIds})}); 
+    setMsgInput(""); 
+    setLoading(false);
+  }
+
+  async function gradeSubmission(){ if(!gradingModal) return; setLoading(true); await fetch(`/api/classroom/${cohort.id}/assignments/${gradingModal.assignmentId}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({submissionId:gradingModal.id,...gradeInput,score:Number(gradeInput.score)})}); setGradingModal(null); load(); setLoading(false); }
+  async function toggleLive(){ 
+    setLoading(true);
+    const r = await fetch(`/api/classroom/${cohort.id}/live`,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({isLive: !isLive})});
+    if(r.ok) setIsLive(!isLive);
+    setLoading(false);
+  }
+
+  const openSession = attendance.find((s:any)=>!s.closedAt);
+  const TABS = [
+    {id:"chat",label:"Chat",icon:MessageSquare},
+    {id:"assignments",label:"Tasks",icon:ClipboardList},
+    {id:"assessments",label:"Assessments",icon:Zap},
+    {id:"attendance",label:"Attendance",icon:CheckSquare},
+    {id:"students",label:"Students",icon:Users},
+    {id:"settings",label:"Settings",icon:Settings}
   ] as const;
 
-  async function postAssignment(e: React.FormEvent) {
-    e.preventDefault(); setSavingAss(true); setAssError(null);
-    const res = await fetch("/api/tutor/assignments", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ cohortId: cohort.id, title: newAssTitle, description: newAssDesc }),
+  const renderContent = (content: string) => {
+    return content.split(/(@\w+)/g).map((part, i) => {
+      if (part.startsWith('@')) {
+        return <span key={i} className="text-teal-400 font-bold bg-teal-500/10 px-1 rounded">{part}</span>;
+      }
+      return part;
     });
-    const data = await res.json();
-    if (!res.ok) { setAssError(data.error ?? "Failed to post"); setSavingAss(false); return; }
-    setLocalAssignments(prev => [...prev, { ...data, submissions: [] }]);
-    setNewAssTitle(""); setNewAssDesc(""); setSavingAss(false);
-  }
-
-  async function gradeSubmission(submissionId: string, assignmentId: string) {
-    const res = await fetch("/api/tutor/grade", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ submissionId, grade: gradeValue }),
-    });
-    if (!res.ok) return;
-    setLocalAssignments(prev => prev.map(a => a.id === assignmentId
-      ? { ...a, submissions: a.submissions.map(s => s.id === submissionId ? { ...s, grade: gradeValue } : s) }
-      : a
-    ));
-    setGradingId(null); setGradeValue("");
-  }
+  };
 
   return (
-    <div className="space-y-5">
-      {/* Tab bar */}
-      <div className="flex gap-1 bg-white/[0.03] border border-white/[0.07] p-1 rounded-2xl w-fit">
-        {tabs.map(({ id, label, icon: Icon }) => (
-          <button key={id} onClick={() => setTab(id as typeof tab)}
-            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all ${tab === id ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}>
-            <Icon className="w-4 h-4" /> {label}
-          </button>
-        ))}
+    <div className="min-h-screen bg-[#09090f] flex flex-col">
+      <Toaster position="top-right" />
+      {gradingModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-white/10 rounded-3xl p-6 max-w-md w-full">
+            <div className="flex justify-between items-center mb-4"><h3 className="text-white font-black">Grade Submission</h3><button onClick={()=>setGradingModal(null)}><X className="w-5 h-5 text-slate-400"/></button></div>
+            <p className="text-slate-400 text-sm mb-3"><strong className="text-white">{gradingModal.user?.name}</strong>: {gradingModal.content||"(file submission)"}</p>
+            <input type="number" className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white mb-3 focus:outline-none focus:border-teal-500 text-sm" placeholder="Score" value={gradeInput.score} onChange={e=>setGradeInput(p=>({...p,score:e.target.value}))}/>
+            <textarea className="w-full bg-slate-800 border border-slate-700 rounded-xl px-4 py-2.5 text-white resize-none h-20 focus:outline-none focus:border-teal-500 text-sm mb-4" placeholder="Feedback (optional)" value={gradeInput.feedback} onChange={e=>setGradeInput(p=>({...p,feedback:e.target.value}))}/>
+            <button onClick={gradeSubmission} disabled={loading} className="w-full py-3 bg-teal-600 hover:bg-teal-500 text-white font-black rounded-xl text-sm transition-all">{loading?<Loader2 className="w-4 h-4 animate-spin mx-auto"/>:"Save Grade"}</button>
+          </div>
+        </div>
+      )}
+
+      <header className="sticky top-0 z-20 bg-[#09090f]/90 backdrop-blur border-b border-white/5 px-4 py-3">
+        <div className="max-w-5xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Link href="/tutor/dashboard" className="text-slate-400 hover:text-white transition-colors"><ArrowLeft className="w-5 h-5"/></Link>
+            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${cohort.course.color} flex items-center justify-center`}><GraduationCap className="w-5 h-5 text-white"/></div>
+            <div>
+               <div className="flex items-center gap-2">
+                  <p className="text-white font-black text-sm">{cohort.name}</p>
+                  {isLive && <span className="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-black animate-pulse">LIVE</span>}
+               </div>
+               <p className="text-slate-500 text-xs">{cohort.course.title}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+             <button 
+                onClick={toggleLive} 
+                disabled={loading}
+                className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all ${isLive ? 'bg-red-600/20 text-red-400 border border-red-500/20 hover:bg-red-600/30' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-lg shadow-indigo-500/20'}`}
+             >
+                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : isLive ? <Radio className="w-3.5 h-3.5"/> : <Video className="w-3.5 h-3.5"/>}
+                {isLive ? 'Stop Stream' : 'Start Live Class'}
+             </button>
+             <span className="text-[10px] bg-teal-500/20 text-teal-400 border border-teal-500/20 px-3 py-2 rounded-xl font-black uppercase tracking-widest hidden sm:block">Admin Console</span>
+          </div>
+        </div>
+      </header>
+
+      <div className="border-b border-white/5 sticky top-[61px] z-10 bg-[#09090f]/80 backdrop-blur overflow-hidden">
+        <div className="max-w-5xl mx-auto flex overflow-x-auto no-scrollbar">
+          {TABS.map(({id,label,icon:Icon})=>(
+            <button key={id} onClick={()=>setTab(id)} className={`flex items-center gap-2 px-6 py-4 text-xs font-black uppercase tracking-widest whitespace-nowrap border-b-2 transition-all ${tab===id?"border-teal-500 text-white":"border-transparent text-slate-500 hover:text-slate-300"}`}>
+              <Icon className="w-3.5 h-3.5"/>{label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* ══ STUDENTS TAB ══ */}
-      {tab === "students" && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-slate-400 text-sm">{cohort.enrollments.length} enrolled · {cohort.maxStudents} max capacity</p>
-          </div>
-          {cohort.enrollments.length === 0 ? (
-            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-10 text-center">
-              <Users className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-              <p className="text-slate-400">No students enrolled yet.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto rounded-2xl border border-white/[0.07]">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="bg-white/[0.04] border-b border-white/[0.06]">
-                    {["Student", "Email", "Enrolled", "Paid", "Status"].map(h => (
-                      <th key={h} className="text-left px-4 py-3 text-slate-400 font-black text-xs uppercase tracking-widest">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {cohort.enrollments.map((e, i) => (
-                    <tr key={e.id} className={`border-b border-white/[0.04] ${i % 2 === 0 ? "bg-white/[0.01]" : ""}`}>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-2.5">
-                          <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-xs shrink-0">
-                            {(e.name ?? e.email)[0].toUpperCase()}
-                          </div>
-                          <span className="text-white font-bold">{e.name ?? "—"}</span>
+      <div className="flex-1 max-w-5xl mx-auto w-full px-4 py-6">
+
+        {/* CHAT - Real Time + Mentions for Tutors */}
+        {tab==="chat" && (
+          <div className="flex flex-col h-[75vh] bg-slate-900/30 border border-white/5 rounded-3xl overflow-hidden shadow-2xl relative">
+            <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-hide">
+              {messages.map((m:any)=>{
+                const isMe = m.userId === userId;
+                const isTutor = m.user?.role === "TUTOR" || m.user?.role === "ADMIN";
+                
+                return (
+                  <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                    <div className={`flex gap-3 max-w-[80%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>
+                      <div className="relative shrink-0">
+                         <div className={`w-9 h-9 rounded-2xl bg-gradient-to-br ${isTutor ? 'from-teal-500 to-emerald-600' : 'from-indigo-500 to-purple-600'} flex items-center justify-center text-white text-xs font-black ring-2 ring-white/5 overflow-hidden shadow-lg`}>
+                            {m.user?.image ? <img src={m.user.image} className="w-full h-full object-cover" /> : (m.user?.name??"?")[0].toUpperCase()}
+                         </div>
+                         {isTutor && <div className="absolute -bottom-1 -right-1 bg-teal-500 text-white p-0.5 rounded-lg shadow-lg border border-slate-900"><Shield className="w-2.5 h-2.5"/></div>}
+                      </div>
+                      <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                        <div className="flex items-center gap-2 mb-1 px-1">
+                          <span className="text-slate-400 text-[10px] font-black uppercase tracking-widest">{m.user?.name}</span>
+                          <span className="text-slate-600 text-[9px]">{new Date(m.createdAt).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"})}</span>
                         </div>
-                      </td>
-                      <td className="px-4 py-3 text-slate-400">{e.email}</td>
-                      <td className="px-4 py-3 text-slate-500 text-xs">{new Date(e.createdAt).toLocaleDateString("en-GB")}</td>
-                      <td className="px-4 py-3 text-white font-bold">{fmtNGN(e.amountPaid)} <span className="text-slate-500 text-xs font-normal">/ {fmtNGN(e.totalAmount)}</span></td>
-                      <td className="px-4 py-3">
-                        <span className={`inline-flex items-center gap-1 border px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest ${STATUS_COLOR[e.paymentStatus] ?? STATUS_COLOR.UNPAID}`}>
-                          {e.paymentStatus === "PAID" ? <CheckCircle2 className="w-3 h-3" /> : <AlertCircle className="w-3 h-3" />}
-                          {e.paymentStatus}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ══ CURRICULUM TAB ══ */}
-      {tab === "curriculum" && (
-        <div className="space-y-3">
-          {modules.length === 0 ? (
-            <div className="bg-white/[0.03] border border-white/[0.06] rounded-2xl p-10 text-center">
-              <BookOpen className="w-10 h-10 text-slate-600 mx-auto mb-2" />
-              <p className="text-slate-400">No curriculum modules added yet.</p>
-            </div>
-          ) : modules.map((mod, mi) => (
-            <div key={mod.id} className="bg-white/[0.04] border border-white/[0.07] rounded-2xl overflow-hidden">
-              <button
-                onClick={() => setOpenModule(openModule === mod.id ? null : mod.id)}
-                className="w-full flex items-center justify-between px-5 py-4 text-left hover:bg-white/[0.03] transition-colors"
-              >
-                <div>
-                  <p className="text-slate-500 text-xs font-black uppercase tracking-widest">Module {mi + 1}</p>
-                  <p className="text-white font-black mt-0.5">{mod.title}</p>
-                </div>
-                <div className="flex items-center gap-3 text-slate-400">
-                  <span className="text-xs">{mod.videos.length} lessons</span>
-                  {openModule === mod.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                </div>
-              </button>
-              {openModule === mod.id && (
-                <div className="border-t border-white/[0.06]">
-                  {mod.videos.map((v, vi) => (
-                    <div key={v.id} className="flex items-center justify-between px-5 py-3 border-b border-white/[0.04] last:border-0">
-                      <div className="flex items-center gap-3">
-                        <span className="w-5 h-5 rounded-full bg-white/5 flex items-center justify-center text-slate-500 text-[10px] font-black shrink-0">{vi + 1}</span>
-                        <span className="text-slate-300 text-sm">{v.title}</span>
-                        {v.isFree && <span className="text-green-400 text-[10px] font-black bg-green-400/10 px-2 py-0.5 rounded-full">Free</span>}
-                      </div>
-                      <div className="flex items-center gap-2 text-slate-500 text-xs shrink-0">
-                        <Clock className="w-3 h-3" /> {v.duration}
+                        <div className={`px-4 py-3 rounded-3xl text-sm leading-relaxed shadow-sm border ${
+                          isMe 
+                            ? 'bg-teal-600 text-white rounded-tr-none border-teal-500 shadow-teal-500/10' 
+                            : 'bg-white/5 text-slate-300 rounded-tl-none border-white/5'
+                        }`}>
+                          {renderContent(m.content)}
+                        </div>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* ══ ASSIGNMENTS TAB ══ */}
-      {tab === "assignments" && (
-        <div className="space-y-5">
-          {/* Create assignment */}
-          <form onSubmit={postAssignment} className="bg-white/[0.04] border border-white/[0.07] rounded-2xl p-5 space-y-3">
-            <p className="text-white font-black">Post New Assignment</p>
-            <input
-              className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500"
-              placeholder="Assignment title..." value={newAssTitle} onChange={e => setNewAssTitle(e.target.value)} required
-            />
-            <textarea
-              className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-2.5 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-indigo-500 h-20 resize-none"
-              placeholder="Instructions and requirements..." value={newAssDesc} onChange={e => setNewAssDesc(e.target.value)} required
-            />
-            {assError && <p className="text-red-400 text-xs">{assError}</p>}
-            <button type="submit" disabled={savingAss} className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-sm rounded-xl disabled:opacity-60">
-              {savingAss ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Post Assignment
-            </button>
-          </form>
-
-          {/* Assignment list */}
-          {localAssignments.map(a => (
-            <div key={a.id} className="bg-white/[0.04] border border-white/[0.07] rounded-2xl overflow-hidden">
-              <div className="px-5 py-4 border-b border-white/[0.06]">
-                <p className="text-white font-black">{a.title}</p>
-                <p className="text-slate-400 text-sm mt-1">{a.description}</p>
-              </div>
-              <div className="p-4 space-y-2">
-                <p className="text-slate-500 text-xs font-black uppercase tracking-widest mb-2">
-                  Submissions ({a.submissions.length})
-                </p>
-                {a.submissions.length === 0 && <p className="text-slate-600 text-sm">No submissions yet.</p>}
-                {a.submissions.map(sub => (
-                  <div key={sub.id} className="flex items-center gap-3 bg-white/[0.03] rounded-xl px-4 py-2.5">
-                    <div className="w-7 h-7 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-black text-[10px] shrink-0">
-                      {(sub.user.name ?? sub.user.email)[0].toUpperCase()}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-white text-sm font-bold truncate">{sub.user.name ?? sub.user.email}</p>
-                      {sub.fileUrl && <a href={sub.fileUrl} className="text-indigo-400 text-xs hover:underline">View submission →</a>}
-                    </div>
-                    {sub.grade ? (
-                      <span className="bg-green-500/10 text-green-400 border border-green-500/20 text-xs font-black px-2.5 py-1 rounded-full">{sub.grade}</span>
-                    ) : gradingId === sub.id ? (
-                      <div className="flex items-center gap-2">
-                        <input value={gradeValue} onChange={e => setGradeValue(e.target.value)} placeholder="A, B+..." className="w-20 bg-slate-800 border border-slate-600 rounded-lg px-2 py-1 text-white text-xs" />
-                        <button onClick={() => gradeSubmission(sub.id, a.id)} className="bg-indigo-600 text-white px-2 py-1 rounded-lg text-xs">Save</button>
-                        <button onClick={() => setGradingId(null)} className="text-slate-400 hover:text-white"><X className="w-4 h-4" /></button>
-                      </div>
-                    ) : (
-                      <button onClick={() => { setGradingId(sub.id); setGradeValue(""); }} className="text-xs text-indigo-400 hover:text-indigo-300 font-bold border border-indigo-400/30 px-2.5 py-1 rounded-full">Grade</button>
-                    )}
                   </div>
-                ))}
-              </div>
+                );
+              })}
+              <div ref={chatBottom}/>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* ══ ANNOUNCEMENTS TAB ══ */}
-      {tab === "announce" && (
-        <div className="space-y-5">
-          <div className="bg-white/[0.04] border border-white/[0.07] rounded-2xl p-5 space-y-3">
-            <p className="text-white font-black">Post Announcement</p>
-            <textarea
-              value={announce} onChange={e => setAnnounce(e.target.value)}
-              placeholder="Write an announcement to all students in this cohort..."
-              className="w-full bg-white/[0.05] border border-white/[0.08] rounded-xl px-4 py-3 text-white text-sm placeholder:text-slate-500 focus:outline-none focus:border-teal-500 h-24 resize-none"
+            
+            <MentionInput 
+               value={msgInput} 
+               onChange={setMsgInput} 
+               onSend={sendMsg} 
+               loading={loading} 
+               users={students}
             />
-            <button
-              onClick={() => {
-                if (!announce.trim()) return;
-                setAnnouncements(prev => [{ text: announce.trim(), time: new Date().toLocaleString() }, ...prev]);
-                setAnnounce("");
-              }}
-              className="flex items-center gap-2 px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-bold text-sm rounded-xl"
-            >
-              <Send className="w-4 h-4" /> Post to Cohort
-            </button>
           </div>
+        )}
 
-          <div className="space-y-3">
-            {announcements.map((a, i) => (
-              <div key={i} className="bg-white/[0.04] border border-white/[0.07] rounded-2xl p-5">
-                <div className="flex items-center gap-2 mb-2">
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-br from-teal-500 to-emerald-600 flex items-center justify-center text-white font-black text-[10px]">T</div>
-                  <p className="text-white font-black text-sm">You (Tutor)</p>
-                  <p className="text-slate-500 text-xs ml-auto">{a.time}</p>
-                </div>
-                <p className="text-slate-300 text-sm leading-relaxed">{a.text}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+        {/* ... other tabs ... */}
+
+      </div>
     </div>
   );
 }

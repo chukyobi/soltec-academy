@@ -19,8 +19,7 @@ function createPrismaClient() {
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient();
-
-if (process.env.NODE_ENV !== "production") globalForPrisma.prisma = prisma;
+// CACHE BYPASSED: Forced refresh for new schema at 2026-05-06T00:45
+export const prisma = createPrismaClient();
 
 export default prisma;

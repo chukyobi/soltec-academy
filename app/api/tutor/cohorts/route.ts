@@ -6,8 +6,8 @@ import { requireTutor } from "@/lib/auth";
 export async function GET() {
   try {
     const session = await requireTutor();
-    const cohorts = await prisma.cohort.findMany({
-      where: { tutorId: session.user.id },
+    const cohorts = await (prisma.cohort as any).findMany({
+      where: session.user.role === "ADMIN" ? {} : { tutors: { some: { id: session.userId } } },
       include: {
         course: { select: { id: true, title: true, slug: true, color: true, level: true, duration: true } },
         _count: { select: { enrollments: true, assignments: true } },

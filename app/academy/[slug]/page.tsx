@@ -186,12 +186,9 @@ export default async function AcademyCourseDetailPage({
                       {mod.lessons && (
                         <ul className="px-6 pb-4 space-y-2 border-t border-slate-100 pt-3 bg-white">
                           {mod.lessons.map((v: any, vi: number) => (
-                            <li key={vi} className="flex items-center justify-between text-sm">
-                              <div className="flex items-center gap-2 text-slate-600">
-                                <BookOpen className="w-3.5 h-3.5 text-slate-300 shrink-0" />
-                                {v.title}
-                              </div>
-                              <span className="text-slate-400 text-xs shrink-0 ml-3">{v.duration}</span>
+                            <li key={vi} className="flex items-center gap-2 text-sm text-slate-600">
+                              <BookOpen className="w-3.5 h-3.5 text-slate-300 shrink-0" />
+                              {v.title}
                             </li>
                           ))}
                         </ul>

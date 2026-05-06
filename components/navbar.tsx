@@ -30,8 +30,6 @@ export function Navbar({ theme = 'light', student }: NavProps) {
     { name: 'HOME', href: '/' },
     { name: 'ACADEMY', href: '/academy' },
     { name: 'COURSES', href: '/courses' },
-    { name: 'BLOG', href: '/blog' },
-    { name: 'STUDIO', href: '/studio' },
   ];
 
   const initials = student?.name
@@ -199,17 +197,8 @@ export function Navbar({ theme = 'light', student }: NavProps) {
                     )}
                   </div>
                 ) : (
-                  /* ── Logged-out: Student Login + Get Started ── */
+                  /* ── Logged-out: Get Started only ── */
                   <>
-                    <Link
-                      href="/student/login"
-                      className={cn(
-                        'text-sm font-bold px-4 py-2 rounded-xl transition-all',
-                        isDark ? 'text-white/70 hover:text-white' : 'text-slate-600 hover:text-slate-900'
-                      )}
-                    >
-                      Student Login
-                    </Link>
                     <Link
                       href="/academy"
                       className={cn(
@@ -289,9 +278,6 @@ export function Navbar({ theme = 'light', student }: NavProps) {
               </>
             ) : (
               <>
-                <Link href="/student/login" onClick={() => setIsOpen(false)} className="block w-full text-center py-4 border border-slate-200 rounded-xl text-slate-700 font-bold text-sm hover:border-indigo-400 hover:text-indigo-600 transition-all">
-                  Student Login
-                </Link>
                 <Link href="/academy" onClick={() => setIsOpen(false)} className="block w-full text-center py-4 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-500 transition-all">
                   Explore Academy →
                 </Link>

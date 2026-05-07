@@ -128,22 +128,23 @@ export default function TutorClassroomClient({ cohort: initialCohort, tutorName,
 
       <header className="sticky top-0 z-20 bg-[#09090f]/90 backdrop-blur border-b border-white/5 px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <Link href="/tutor/dashboard" className="text-slate-400 hover:text-white transition-colors"><ArrowLeft className="w-5 h-5"/></Link>
-            <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${initialCohort.course.color} flex items-center justify-center`}><GraduationCap className="w-5 h-5 text-white"/></div>
-            <div>
+            <Link href="/"><img src="/soltec-academy-logo.svg" alt="Soltec Academy" className="h-7 w-auto brightness-110" /></Link>
+            <div className="hidden sm:block h-6 w-[1px] bg-white/10 mx-1" />
+            <div className="min-w-0">
                <div className="flex items-center gap-2">
-                  <p className="text-white font-black text-sm">{initialCohort.name}</p>
-                  {isLive && <span className="bg-red-600 text-white text-[9px] px-1.5 py-0.5 rounded-full font-black animate-pulse">LIVE</span>}
+                  <p className="text-white font-black text-sm truncate">{initialCohort.name}</p>
+                  {isLive && <span className="bg-red-600 text-white text-[9px] px-2 py-0.5 rounded-full font-black animate-pulse uppercase tracking-widest">Live</span>}
                </div>
-               <p className="text-slate-500 text-xs">{initialCohort.course.title}</p>
+               <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest truncate">{initialCohort.course.title}</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
-             <button onClick={()=>setShowScheduleModal(true)} className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl text-xs font-black transition-all">Schedule Class</button>
-             <button onClick={toggleLive} disabled={loading} className={`px-4 py-2 rounded-xl text-xs font-black flex items-center gap-2 transition-all shadow-lg ${isLive ? 'bg-red-600/20 text-red-400 border border-red-500/20' : 'bg-indigo-600 text-white shadow-indigo-500/20'}`}>
+             <button onClick={()=>setShowScheduleModal(true)} className="px-4 py-2 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl text-xs font-black uppercase tracking-widest transition-all">Schedule</button>
+             <button onClick={toggleLive} disabled={loading} className={`px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-xl ${isLive ? 'bg-red-600/20 text-red-400 border border-red-500/20' : 'bg-indigo-600 text-white shadow-indigo-500/30 active:scale-95'}`}>
                 {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin"/> : isLive ? <Radio className="w-3.5 h-3.5"/> : <Video className="w-3.5 h-3.5"/>}
-                {isLive ? 'End Stream' : 'Start Live Now'}
+                {isLive ? 'End Live' : 'Go Live'}
              </button>
           </div>
         </div>

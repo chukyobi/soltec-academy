@@ -406,24 +406,25 @@ export default function AcademyClient({ initialCourses, initialCohorts, initialT
 
           {/* ── COHORTS TAB ── */}
           {tab === "cohorts" && (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {cohorts.map(c => (
-                <div key={c.id} className={`group relative bg-slate-900 border border-white/5 rounded-2xl p-5 flex flex-col sm:flex-row sm:items-center gap-4 transition-all ${!c.isActive ? "opacity-50 grayscale-[0.5]" : "hover:border-white/20"}`}>
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${c.course.color} flex items-center justify-center shrink-0`}>
-                    <GraduationCap className="w-6 h-6 text-white" />
+                <div key={c.id} className={`group relative bg-[#0d0d14] border border-white/5 rounded-[24px] p-6 flex flex-col sm:flex-row sm:items-center gap-6 transition-all ${!c.isActive ? "opacity-40 grayscale" : "hover:border-white/20 hover:bg-[#12121a] shadow-xl"}`}>
+                  <div className={`w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 shadow-inner group-hover:border-indigo-500/30 group-hover:bg-indigo-500/5 transition-all`}>
+                    <GraduationCap className="w-7 h-7 text-slate-400 group-hover:text-indigo-400 transition-colors" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="text-white font-bold truncate">{c.name}</h3>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <h3 className="text-white font-black text-lg tracking-tight truncate">{c.name}</h3>
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded border border-white/5">{c.course.title}</span>
                       {!c.isActive && (
                         <span className="flex items-center gap-1 bg-white/10 text-white text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-white/10">
                           <Snowflake className="w-2.5 h-2.5" /> Frozen
                         </span>
                       )}
                     </div>
-                    <p className="text-slate-500 text-xs flex items-center gap-3">
-                      <span className="flex items-center gap-1"><CalendarDays className="w-3 h-3" /> {fmtDate(c.startDate)} – {fmtDate(c.endDate)}</span>
-                      <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {c._count.enrollments} / {c.maxStudents} students</span>
+                    <p className="text-slate-400 text-xs font-bold flex items-center flex-wrap gap-4">
+                      <span className="flex items-center gap-2 uppercase tracking-tighter"><CalendarDays className="w-4 h-4 text-slate-600" /> {fmtDate(c.startDate)} – {fmtDate(c.endDate)}</span>
+                      <span className="flex items-center gap-2 uppercase tracking-tighter"><Users className="w-4 h-4 text-slate-600" /> {c._count.enrollments} / {c.maxStudents} Students</span>
                     </p>
                   </div>
                   <div className="flex items-center gap-2">

@@ -99,19 +99,17 @@ export default async function TutorDashboardPage() {
     <div className="min-h-screen bg-[#09090f] flex flex-col">
       {/* Top Nav */}
       <header className="sticky top-0 z-20 bg-[#09090f]/80 backdrop-blur border-b border-white/5 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-xl flex items-center justify-center">
-            <GraduationCap className="w-5 h-5 text-white" />
-          </div>
-          <div>
-            <p className="text-white font-black text-sm">Tutor Dashboard</p>
-            <p className="text-slate-500 text-xs">{session.user.name ?? session.user.email}</p>
+        <div className="flex items-center gap-4">
+          <Link href="/"><img src="/soltec-academy-logo.svg" alt="Soltec Academy" className="h-8 w-auto brightness-110" /></Link>
+          <div className="hidden sm:block h-6 w-[1px] bg-white/10 mx-1" />
+          <div className="min-w-0">
+            <p className="text-white font-black text-sm truncate uppercase tracking-widest">Tutor Dashboard</p>
+            <p className="text-slate-500 text-[10px] font-black uppercase tracking-tighter truncate">{session.user.name ?? session.user.email}</p>
           </div>
         </div>
-        <div className="flex items-center gap-3">
-          <Link href="/" className="text-slate-400 hover:text-white text-xs font-bold transition-colors">← Site</Link>
-          <Link href="/api/tutor/auth/logout" className="flex items-center gap-1.5 text-slate-400 hover:text-white text-xs font-bold transition-colors">
-            <LogOut className="w-3.5 h-3.5" /> Sign Out
+        <div className="flex items-center gap-4">
+          <Link href="/api/tutor/auth/logout" className="flex items-center gap-2 text-red-400 hover:text-red-300 text-xs font-black uppercase tracking-widest transition-colors">
+            <LogOut className="w-4 h-4" /> Sign Out
           </Link>
         </div>
       </header>
@@ -145,8 +143,8 @@ export default async function TutorDashboardPage() {
                 <Icon className="w-5 h-5 text-white" />
               </div>
               <div>
-                <p className="text-2xl font-black text-white">{value}</p>
-                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">{label}</p>
+                <p className="text-3xl font-black text-white">{value}</p>
+                <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em]">{label}</p>
               </div>
             </div>
           ))}
@@ -182,8 +180,8 @@ export default async function TutorDashboardPage() {
                           </span>
                         </div>
 
-                        <h3 className="text-white font-black text-lg leading-tight mb-1">{cohort.name}</h3>
-                        <p className="text-slate-400 text-sm mb-4">{cohort.course.title}</p>
+                        <h3 className="text-white font-black text-xl leading-tight mb-1">{cohort.name}</h3>
+                        <p className="text-slate-400 text-xs font-black uppercase tracking-widest">{cohort.course.title}</p>
 
                         <div className="grid grid-cols-2 gap-2 text-xs text-slate-500 mb-4">
                           <span className="flex items-center gap-1.5"><CalendarDays className="w-3 h-3" /> {fmtDate(cohort.startDate)}</span>

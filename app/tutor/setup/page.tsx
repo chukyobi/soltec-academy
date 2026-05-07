@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { GraduationCap, ShieldCheck, Lock, Eye, EyeOff, Loader2, ArrowRight } from "lucide-react";
 
 export default function TutorSetupPage() {
@@ -54,9 +55,7 @@ export default function TutorSetupPage() {
 
       <div className="w-full max-w-lg relative z-10">
         <div className="text-center mb-10">
-          <div className="w-16 h-16 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-teal-500/20">
-            <ShieldCheck className="w-8 h-8 text-white" />
-          </div>
+          <Link href="/"><img src="/soltec-academy-logo.svg" alt="Soltec Academy" className="h-10 w-auto mx-auto brightness-200 mb-8" /></Link>
           <h1 className="text-3xl font-black text-white mb-3 tracking-tight">Security Update Required</h1>
           <p className="text-slate-400 text-sm leading-relaxed max-w-xs mx-auto">
             Welcome to Soltec! For your security, please update your temporary password before accessing your dashboard.

@@ -111,10 +111,9 @@ function LoginForm() {
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
         <div className="absolute bottom-0 left-0 w-64 h-64 bg-indigo-400/10 rounded-full blur-2xl" />
 
-        {/* Logo with cartoon grad cap */}
-        <div className="relative z-10 flex items-center gap-3">
-          <CartoonGradCap />
-          <Link href="/" className="text-white font-black text-xl tracking-tight">Soltec Academy</Link>
+        {/* Logo */}
+        <div className="relative z-10">
+          <Link href="/"><img src="/soltec-academy-logo.svg" alt="Soltec Academy" className="h-10 w-auto brightness-200" /></Link>
         </div>
 
         {/* Hero copy */}
@@ -164,11 +163,8 @@ function LoginForm() {
       <div className="flex-1 flex items-center justify-center px-6 bg-white overflow-y-auto">
         <div className="w-full max-w-md py-10">
           {/* Mobile logo */}
-          <Link href="/" className="lg:hidden inline-flex items-center gap-2 text-slate-900 font-black text-lg mb-8">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-lg flex items-center justify-center">
-              <svg viewBox="0 0 24 24" fill="white" className="w-4 h-4"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>
-            </div>
-            Soltec Academy
+          <Link href="/" className="lg:hidden block mb-10">
+            <img src="/soltec-academy-logo.svg" alt="Soltec Academy" className="h-8 w-auto invert brightness-0" />
           </Link>
 
           <div className="mb-8">

@@ -67,12 +67,11 @@ export default async function StudentProfilePage() {
       <header className="sticky top-0 z-20 bg-[#09090f]/80 backdrop-blur border-b border-white/5 px-4 sm:px-6 py-4">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center"><GraduationCap className="w-4 h-4 text-white"/></div>
-            <span className="text-white font-black text-sm hidden sm:block">Soltec Academy</span>
+            <img src="/soltec-academy-logo.svg" alt="Soltec Academy" className="h-8 w-auto brightness-110" />
           </Link>
-          <div className="flex items-center gap-3">
-            <Link href="/academy" className="text-slate-400 hover:text-white text-xs font-bold hidden sm:block transition-colors">Browse Tracks →</Link>
-            <Link href="/api/student/auth/logout" className="flex items-center gap-1.5 text-slate-400 hover:text-white text-xs font-bold transition-colors"><LogOut className="w-3.5 h-3.5"/>Sign Out</Link>
+          <div className="flex items-center gap-4">
+            <Link href="/academy" className="text-slate-300 hover:text-white text-xs font-black uppercase tracking-widest hidden sm:block transition-colors">Browse Tracks</Link>
+            <Link href="/api/student/auth/logout" className="flex items-center gap-2 text-red-400 hover:text-red-300 text-xs font-black uppercase tracking-widest transition-colors"><LogOut className="w-4 h-4"/>Sign Out</Link>
           </div>
         </div>
       </header>
@@ -130,8 +129,8 @@ export default async function StudentProfilePage() {
                 return (
                   <div key={a.id} className="bg-white/[0.03] border border-amber-500/20 rounded-3xl p-6 flex items-center justify-between gap-4 group hover:bg-amber-500/[0.02] transition-all">
                     <div>
-                      <p className="text-white font-black text-base">{a.title}</p>
-                      <p className="text-slate-500 text-xs mt-1 font-bold">{a.cohort.course.title} · {a.cohort.name}</p>
+                      <p className="text-white font-black text-lg tracking-tight">{a.title}</p>
+                      <p className="text-slate-400 text-xs mt-1 font-black uppercase tracking-widest">{a.cohort.course.title} · {a.cohort.name}</p>
                     </div>
                     <div className="text-right shrink-0">
                       {left && <p className="text-amber-400 font-black text-xs animate-pulse">{left}</p>}
@@ -199,9 +198,9 @@ export default async function StudentProfilePage() {
                         </div>
                       )}
                       
-                      <div className="pt-2 flex flex-col gap-3">
-                        <Link data-tour="classroom-btn" href={`/student/classroom/${cohort.id}`} className="w-full flex items-center justify-center gap-3 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl transition-all text-sm shadow-xl shadow-indigo-500/20 active:scale-95">Enter Your Classroom <ArrowRight className="w-4 h-4"/></Link>
-                        {balance>0 && <Link href={`/academy/${course.slug}`} className="w-full flex items-center justify-center gap-2 py-3.5 bg-white/5 hover:bg-amber-500/10 text-amber-400 border border-amber-500/20 font-black rounded-2xl transition-all text-[10px] uppercase tracking-[0.2em]">Pay Remaining Balance: {fmtNGN(balance)}</Link>}
+                      <div className="pt-2 flex flex-col gap-4">
+                        <Link data-tour="classroom-btn" href={`/student/classroom/${cohort.id}`} className="w-full flex items-center justify-center gap-4 py-5 bg-indigo-600 hover:bg-indigo-500 text-white font-black rounded-2xl transition-all text-sm shadow-2xl shadow-indigo-500/30 active:scale-[0.98]">Enter Your Classroom <ArrowRight className="w-5 h-5"/></Link>
+                        {balance>0 && <Link href={`/academy/${course.slug}`} className="w-full flex items-center justify-center gap-2 py-4 bg-white/5 hover:bg-amber-500/10 text-amber-400 border border-amber-500/30 font-black rounded-2xl transition-all text-[10px] uppercase tracking-[0.2em]">Pay Remaining Balance: {fmtNGN(balance)}</Link>}
                       </div>
                     </div>
                   </div>

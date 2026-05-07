@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { getSession, hashPassword } from "@/lib/auth";
+import { getSession, hashPassword, createSession } from "@/lib/auth";
 
 // POST /api/tutor/auth/setup – Update password for new tutors
 export async function POST(req: Request) {
@@ -24,6 +24,9 @@ export async function POST(req: Request) {
         needsPasswordChange: false,
       },
     });
+
+    // Re-issue session to ensure it's fresh after record update
+    await createSession(session.user.id, "tutor");
 
     return NextResponse.json({ ok: true });
   } catch (err) {

@@ -111,12 +111,7 @@ function SignupForm() {
 
         {/* Logo */}
         <div className="relative z-10">
-          <Link href="/" className="inline-flex items-center gap-2.5 text-white font-black text-xl tracking-tight">
-            <div className="w-9 h-9 bg-white/20 backdrop-blur rounded-xl flex items-center justify-center">
-              <GraduationCap className="w-5 h-5 text-white" />
-            </div>
-            Soltec Academy
-          </Link>
+          <Link href="/"><img src="/soltec-academy-logo.svg" alt="Soltec Academy" className="h-10 w-auto brightness-200" /></Link>
         </div>
 
         {/* Content */}
@@ -170,9 +165,8 @@ function SignupForm() {
       <div className="flex-1 flex items-center justify-center px-6 bg-white overflow-y-auto">
         <div className="w-full max-w-md py-12">
           {/* Mobile logo */}
-          <Link href="/" className="lg:hidden inline-flex items-center gap-2 text-slate-900 font-black text-lg mb-8">
-            <GraduationCap className="w-5 h-5 text-indigo-600" />
-            Soltec Academy
+          <Link href="/" className="lg:hidden block mb-10">
+            <img src="/soltec-academy-logo.svg" alt="Soltec Academy" className="h-8 w-auto invert brightness-0" />
           </Link>
 
           {/* ── Step 1: Form ── */}

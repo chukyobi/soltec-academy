@@ -136,10 +136,10 @@ export default function CohortEnrollCard({
       
       if (data.redirect) {
         setStage("success");
-        setTimeout(() => router.push(data.redirect), 2000);
+        setTimeout(() => { window.location.href = data.redirect; }, 2000);
       } else {
         setStage("success");
-        setTimeout(() => router.push("/student/dashboard"), 2200);
+        setTimeout(() => { window.location.href = "/student/profile"; }, 2200);
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Something went wrong.");

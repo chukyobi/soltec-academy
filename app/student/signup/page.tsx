@@ -62,7 +62,7 @@ function SignupForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setStep("done");
-      setTimeout(() => router.push(redirect), 1800);
+      setTimeout(() => { window.location.href = redirect; }, 1800);
     } catch (e) {
       setError(e instanceof Error ? e.message : "Verification failed");
     } finally {

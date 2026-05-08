@@ -43,59 +43,60 @@ function TutorLoginForm() {
   return (
     <div className="fixed inset-0 flex overflow-hidden">
       {/* Left panel */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-14 relative overflow-hidden bg-[#0f0e17]">
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-20 relative overflow-hidden bg-[#0f0e17]">
         <div className="absolute inset-0 bg-gradient-to-br from-teal-600/30 via-emerald-600/20 to-cyan-600/10" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl" />
         <div className="absolute -bottom-20 left-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl" />
 
         {/* Logo */}
         <div className="relative z-10">
-          <Link href="/" className="inline-flex items-center gap-2.5 text-white font-black text-xl tracking-tight">
-            <div className="w-9 h-9 bg-gradient-to-br from-teal-500 to-emerald-600 rounded-xl flex items-center justify-center">
-              <GraduationCap className="w-5 h-5 text-white" />
-            </div>
-            Soltec Tutor Portal
-          </Link>
+          <Link href="/"><img src="/soltec-academy-logo.svg" alt="Soltec Academy" className="h-12 w-auto brightness-0 invert" /></Link>
         </div>
 
         {/* Content */}
-        <div className="relative z-10 space-y-10">
+        <div className="relative z-10 space-y-20 py-10">
           <div>
-            <h2 className="text-5xl font-black text-white leading-tight mb-5">
+            <h2 className="text-6xl font-black text-white leading-tight mb-6">
               Your<br />classroom<br />awaits.
             </h2>
-            <p className="text-white/60 text-lg leading-relaxed max-w-xs">
+            <p className="text-white/60 text-xl leading-relaxed max-w-sm">
               Sign in to manage your cohorts, engage students, and track their progress in real time.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             {[
               { icon: Users, label: "Manage Students" },
               { icon: BookOpen, label: "Course Materials" },
               { icon: Award, label: "Grade Assignments" },
               { icon: GraduationCap, label: "Track Progress" },
             ].map(({ icon: Icon, label }) => (
-              <div key={label} className="flex items-center gap-2.5 bg-white/5 border border-white/10 rounded-xl px-3 py-2.5">
-                <Icon className="w-4 h-4 text-teal-400 shrink-0" />
-                <span className="text-white/70 text-xs font-bold">{label}</span>
+              <div key={label} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-4 backdrop-blur-sm">
+                <Icon className="w-5 h-5 text-teal-400 shrink-0" />
+                <span className="text-white/80 text-[10px] font-black uppercase tracking-widest">{label}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="relative z-10 text-white/20 text-xs">
-          Soltec Engineering Ltd. © {new Date().getFullYear()}
-        </p>
+        {/* Footer info */}
+        <div className="relative z-10 flex items-center justify-between">
+          <p className="text-white/20 text-[10px] uppercase tracking-[0.3em] font-black">
+            Soltec Engineering Ltd. © {new Date().getFullYear()}
+          </p>
+          <div className="flex gap-4 items-center">
+             <div className="w-2 h-2 rounded-full bg-teal-500 animate-pulse shadow-lg shadow-teal-500/50" />
+             <span className="text-white/30 text-[10px] font-black uppercase tracking-widest">Portal Active</span>
+          </div>
+        </div>
       </div>
 
       {/* Right panel */}
       <div className="flex-1 flex items-center justify-center px-6 bg-white overflow-y-auto">
         <div className="w-full max-w-md py-16">
           {/* Mobile logo */}
-          <Link href="/" className="lg:hidden inline-flex items-center gap-2 text-slate-900 font-black text-lg mb-8">
-            <GraduationCap className="w-5 h-5 text-teal-600" />
-            Soltec Tutor Portal
+          <Link href="/" className="lg:hidden block mb-10">
+            <img src="/soltec-academy-logo.svg" alt="Soltec Academy" className="h-10 w-auto invert brightness-0" />
           </Link>
 
           <div className="mb-8">

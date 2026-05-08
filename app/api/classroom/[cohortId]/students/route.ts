@@ -13,6 +13,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ cohortId
 
     if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
+    const cohort = await prisma.cohort.findUnique({
+      where: { id: cohortId },
+      include: {
+        tutors: {
+          select: { id: true, name: true, email: true, image: true, role: true }
+        }
+      }
+    });
+
     const enrollments = await (prisma.cohortEnrollment as any).findMany({
       where: { cohortId },
       include: {
@@ -22,27 +31,35 @@ export async function GET(req: Request, { params }: { params: Promise<{ cohortId
       },
     });
 
+    const tutors = cohort?.tutors || [];
+
     // If student, return simplified list for mentions
     if (session.user.role === "STUDENT" && !tutorSession) {
-      const simplified = enrollments.map((e: any) => ({
+      const simplifiedStudents = enrollments.map((e: any) => ({
         id: e.user.id,
         name: e.user.name,
         image: e.user.image,
         role: e.user.role
       }));
-      return NextResponse.json(simplified);
+      const simplifiedTutors = tutors.map((t: any) => ({
+        id: t.id,
+        name: t.name,
+        image: t.image,
+        role: t.role
+      }));
+      return NextResponse.json([...simplifiedTutors, ...simplifiedStudents]);
     }
 
     const statuses = await (prisma as any).studentClassroomStatus.findMany({ where: { cohortId } });
     const statusMap = Object.fromEntries(statuses.map((s: any) => [s.userId, s]));
 
-    const data = enrollments.map((e: any) => ({
+    const studentData = enrollments.map((e: any) => ({
       ...e.user,
       status: statusMap[e.user.id]?.status ?? "ACTIVE",
       statusReason: statusMap[e.user.id]?.reason ?? null,
     }));
 
-    return NextResponse.json(data);
+    return NextResponse.json([...tutors, ...studentData]);
   } catch (err) {
     return serverError(err, "GET classroom students");
   }

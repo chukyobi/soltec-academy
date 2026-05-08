@@ -13,7 +13,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ cohortId
 
     const room = `classroom-${cohortId}`;
     const participantName = session.user.name || "Anonymous";
-    const participantIdentity = session.userId;
+    const participantIdentity = `${session.userId}-${Date.now()}`;
 
     const at = new AccessToken(
       process.env.LIVEKIT_API_KEY,

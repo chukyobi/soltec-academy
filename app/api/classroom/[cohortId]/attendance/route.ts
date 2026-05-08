@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
 import { serverError } from "@/lib/api-error";
+import { pusherServer } from "@/lib/pusher";
 
 // GET — attendance sessions + records for cohort
 export async function GET(req: Request, { params }: { params: Promise<{ cohortId: string }> }) {
@@ -45,6 +46,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ cohortI
       const s = await (prisma as any).attendanceSession.create({
         data: { cohortId, label: body.label ?? null },
       });
+      await pusherServer.trigger(`classroom-${cohortId}`, 'attendance-updated', { action: 'open' });
       return NextResponse.json(s, { status: 201 });
     }
 
@@ -54,6 +56,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ cohortI
         where: { id: body.sessionId },
         data: { closedAt: new Date() },
       });
+      await pusherServer.trigger(`classroom-${cohortId}`, 'attendance-updated', { action: 'close' });
       return NextResponse.json(s);
     }
 
@@ -69,6 +72,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ cohortI
         update: {},
         create: { sessionId: openSession.id, userId: session.userId },
       });
+      await pusherServer.trigger(`classroom-${cohortId}`, 'attendance-updated', { action: 'checkin' });
       return NextResponse.json(record, { status: 201 });
     }
 

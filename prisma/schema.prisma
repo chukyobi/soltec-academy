@@ -41,6 +41,9 @@ model User {
   classroomStatuses    StudentClassroomStatus[]
   mentionedIn          ClassroomMessage[]     @relation("MessageMentions")
   liveSessions         LiveSession[]
+  notifications        Notification[]
+  classroomReactions   MessageReaction[]
+  liveSessionMessages  LiveSessionMessage[]
 }
 
 model CreatorProfile {
@@ -205,12 +208,14 @@ model VideoProgress {
 
 model Notification {
   id        String    @id @default(cuid())
-  type      String
+  userId    String?   // The recipient of the notification
+  type      String    // e.g. "BROADCAST", "ASSIGNMENT", "SYSTEM"
   title     String
   message   String
   metadata  Json?
   readAt    DateTime?
   createdAt DateTime  @default(now())
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model AcademyCourse {
@@ -273,8 +278,10 @@ model LiveSession {
   isEnded     Boolean  @default(false)
   createdAt   DateTime @default(now())
   tutorId     String
+  participantCount Int @default(0)
   cohort      Cohort   @relation(fields: [cohortId], references: [id], onDelete: Cascade)
   tutor       User     @relation(fields: [tutorId], references: [id])
+  messages    LiveSessionMessage[]
 }
 
 model CohortEnrollment {
@@ -347,6 +354,7 @@ model ClassroomMessage {
   mentions  User[]   @relation("MessageMentions")
   cohort    Cohort   @relation(fields: [cohortId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id])
+  reactions MessageReaction[]
 }
 
 /// A tutor-opened attendance window
@@ -450,4 +458,30 @@ model AssessmentSubmission {
   user         User       @relation(fields: [userId], references: [id])
 
   @@unique([assessmentId, userId])
+}
+
+model LiveSessionMessage {
+  id            String      @id @default(cuid())
+  sessionId     String
+  userId        String
+  content       String
+  createdAt     DateTime    @default(now())
+  session       LiveSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user          User        @relation(fields: [userId], references: [id])
+  reactions     MessageReaction[]
+}
+
+model MessageReaction {
+  id          String   @id @default(cuid())
+  emoji       String   // e.g. "👍"
+  userId      String
+  messageId   String?  // Relation to main classroom message
+  liveMsgId   String?  // Relation to live session message
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+  message     ClassroomMessage? @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  liveMessage LiveSessionMessage? @relation(fields: [liveMsgId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, messageId, emoji])
+  @@unique([userId, liveMsgId, emoji])
 }

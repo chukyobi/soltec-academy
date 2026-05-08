@@ -29,7 +29,7 @@ interface Props {
 }
 
 type PayType = "FULL" | "PART";
-type Stage = "choose" | "identify" | "email" | "confirm" | "processing" | "success";
+type Stage = "choose" | "identify" | "studentId" | "email" | "confirm" | "processing" | "success";
 
 function fmtNGN(n: number) {
   return `₦${n.toLocaleString("en-NG", { minimumFractionDigits: 0 })}`;
@@ -66,6 +66,7 @@ export default function CohortEnrollCard({
   const [stage, setStage] = useState<Stage>("choose");
   const [isNew, setIsNew] = useState(false);
   const [email, setEmail] = useState("");
+  const [studentId, setStudentId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const dropRef = useRef<HTMLDivElement>(null);
 
@@ -119,6 +120,7 @@ export default function CohortEnrollCard({
           cohortId: selected.id,
           paymentType: payType,
           email: isNew ? email : undefined,
+          studentId: !isNew ? studentId : undefined,
           isNew: isNew
         }),
       });
@@ -126,7 +128,7 @@ export default function CohortEnrollCard({
       if (!res.ok) {
         if (data.code === "AUTH_REQUIRED") {
            setError(data.error);
-           setStage("identify");
+           setStage("studentId");
            return;
         }
         throw new Error(data.error ?? "Enrollment failed");
@@ -177,13 +179,51 @@ export default function CohortEnrollCard({
             <span className="text-slate-400 text-xs font-medium uppercase tracking-tighter">I don&apos;t have an account yet</span>
           </button>
           <button 
-            onClick={() => router.push(`/student/login?redirect=/academy/${course.slug}`)}
+            onClick={() => { setIsNew(false); setStage("studentId"); }}
             className="w-full py-5 border-2 border-slate-100 rounded-2xl flex flex-col items-center justify-center gap-1 hover:border-slate-400 hover:bg-slate-50 transition-all group"
           >
             <span className="font-black text-slate-900">Existing Student</span>
-            <span className="text-slate-400 text-xs font-medium uppercase tracking-tighter">I already have a Student ID / Email</span>
+            <span className="text-slate-400 text-xs font-medium uppercase tracking-tighter">I already have a Student ID</span>
           </button>
           <button onClick={() => setStage("choose")} className="w-full py-2 text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-slate-600">← Back to cohort</button>
+        </div>
+      </div>
+    );
+  }
+
+  // ── Step 2a: Student ID capture (for existing students) ──
+  if (stage === "studentId") {
+    return (
+      <div className="sticky top-28 bg-white border border-slate-200 rounded-3xl shadow-xl overflow-hidden">
+        <div className={`bg-gradient-to-br ${gradient} px-7 py-7`}>
+          <p className="text-white font-black text-xl leading-tight">Student ID</p>
+          <p className="text-white/70 text-xs mt-1">Provide your ID to match this enrollment.</p>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Your Student ID</label>
+            <input 
+              type="text" 
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 font-bold tracking-widest focus:outline-none focus:border-indigo-500"
+              placeholder="e.g. STU-SOL-XXXX-TEC"
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value.toUpperCase())}
+              required
+            />
+          </div>
+          {error && (
+            <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-700 text-[10px] font-bold">
+              <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {error}
+            </div>
+          )}
+          <button 
+            disabled={!studentId.includes("-")}
+            onClick={() => { setError(null); setStage("confirm"); }}
+            className="w-full py-4 bg-slate-900 text-white font-black rounded-2xl disabled:opacity-50 transition-all"
+          >
+            Continue to Payment
+          </button>
+          <button onClick={() => setStage("identify")} className="w-full py-2 text-slate-400 text-xs font-bold uppercase tracking-widest hover:text-slate-600">← Change option</button>
         </div>
       </div>
     );

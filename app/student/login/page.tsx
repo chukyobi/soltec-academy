@@ -105,7 +105,7 @@ function LoginForm() {
   return (
     <div className="fixed inset-0 flex bg-[#09090f] overflow-hidden">
       {/* ── Left panel ── */}
-      <div className="hidden lg:flex lg:w-[52%] flex-col justify-between p-14 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-[52%] flex-col justify-between p-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-purple-700 to-pink-600" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,rgba(255,255,255,0.12),transparent_65%)]" />
         <div className="absolute top-0 right-0 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
@@ -117,46 +117,41 @@ function LoginForm() {
         </div>
 
         {/* Hero copy */}
-        <div className="relative z-10 space-y-8">
-          <div>
-            <h2 className="text-5xl font-black text-white leading-tight mb-4">
-              Welcome<br />back.
+        <div className="relative z-10 flex-1 flex flex-col justify-center py-20">
+          <div className="mb-20">
+            <h2 className="text-7xl font-black text-white leading-tight mb-8 flex flex-wrap items-center gap-x-4">
+              <span>Welcome</span> <span>back.</span>
             </h2>
-            <p className="text-white/65 text-lg leading-relaxed max-w-xs">
-              Sign in to access your cohort classes, track your progress, and manage your enrollment.
+            <p className="text-white/70 text-2xl leading-relaxed max-w-lg font-medium">
+              Access your personalized learning portal, track your cohort progress, and continue your engineering journey.
             </p>
           </div>
 
-          {/* Perks with cartoon icons */}
-          <div className="space-y-3">
+          {/* Perks with cartoon icons - Spaced out */}
+          <div className="grid gap-10">
             {PERKS.map(({ cartoon: Cartoon, label }) => (
-              <div key={label} className="flex items-center gap-3">
-                <div className="w-11 h-11 shrink-0">
+              <div key={label} className="flex items-center gap-6 group">
+                <div className="w-16 h-16 shrink-0 transition-transform group-hover:scale-110 duration-300">
                   <Cartoon />
                 </div>
-                <span className="text-white/75 text-sm font-medium">{label}</span>
+                <span className="text-white/90 text-lg font-black uppercase tracking-[0.2em]">{label}</span>
               </div>
             ))}
           </div>
-
-          {/* Testimonial */}
-          <div className="bg-white/10 backdrop-blur-md border border-white/15 rounded-2xl p-5">
-            <p className="text-white/80 text-sm leading-relaxed italic mb-3">
-              &ldquo;Soltec Academy was structured exactly how I needed. The tutor was incredible.&rdquo;
-            </p>
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-400 to-pink-400 flex items-center justify-center text-white font-black text-xs">C</div>
-              <div>
-                <p className="text-white font-bold text-xs">Chidi O.</p>
-                <p className="text-white/50 text-[10px]">UI/UX Designer</p>
-              </div>
-            </div>
-          </div>
         </div>
 
-        <p className="relative z-10 text-white/30 text-xs">
-          Soltec Engineering Ltd. © {new Date().getFullYear()}
-        </p>
+        {/* Footer info */}
+        <div className="relative z-10 flex items-center justify-between pt-10 border-t border-white/10">
+          <p className="text-white/40 text-[10px] uppercase tracking-[0.4em] font-black">
+            Soltec Engineering Academy © {new Date().getFullYear()}
+          </p>
+          <div className="flex gap-6 items-center">
+             <div className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_12px_rgba(16,185,129,0.5)]" />
+                <span className="text-white/50 text-[10px] font-black uppercase tracking-widest">Network Secure</span>
+             </div>
+          </div>
+        </div>
       </div>
 
       {/* ── Right panel ── */}
@@ -168,12 +163,9 @@ function LoginForm() {
           </Link>
 
           <div className="mb-8">
-            <h1 className="text-3xl font-black text-slate-900">Sign in</h1>
-            <p className="text-slate-500 mt-2 text-sm">
-              Don&apos;t have an account?{" "}
-              <Link href={`/student/signup?redirect=${encodeURIComponent(redirect)}`} className="text-indigo-600 font-bold hover:underline">
-                Create one free →
-              </Link>
+            <h1 className="text-4xl font-black text-slate-900 tracking-tight">Sign in</h1>
+            <p className="text-slate-500 mt-3 text-sm font-medium">
+              Access your student dashboard and classroom materials.
             </p>
           </div>
 
@@ -238,19 +230,8 @@ function LoginForm() {
             </button>
           </form>
 
-          {/* Demo credentials */}
-          <div className="mt-6 p-4 bg-indigo-50 border border-indigo-100 rounded-2xl">
-            <p className="text-indigo-700 text-xs font-black uppercase tracking-wider mb-2">Demo Credentials</p>
-            <p className="text-indigo-600 text-xs font-mono">emeka.obi@student.ng</p>
-            <p className="text-indigo-500 text-xs font-mono">Student@1234</p>
-          </div>
-
-          <div className="mt-6 pt-6 border-t border-slate-100 text-center space-y-2">
-            <p className="text-slate-400 text-xs">Are you a tutor or creator?</p>
-            <div className="flex justify-center gap-4">
-              <Link href="/tutor/login" className="text-sm text-purple-600 font-bold hover:underline">Tutor Portal →</Link>
-              {/*<Link href="/studio/login" className="text-sm text-indigo-600 font-bold hover:underline">Creator Studio →</Link>*/}
-            </div>
+          <div className="mt-10 pt-10 border-t border-slate-100 text-center">
+            <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Authorized Student Access Only</p>
           </div>
         </div>
       </div>

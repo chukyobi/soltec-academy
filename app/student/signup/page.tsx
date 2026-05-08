@@ -104,7 +104,7 @@ function SignupForm() {
   return (
     <div className="fixed inset-0 flex bg-[#09090f] overflow-hidden">
       {/* ── Left panel ── */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-14 relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-20 relative overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-violet-600 via-indigo-600 to-cyan-600" />
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,255,255,0.12),transparent_65%)]" />
         <div className="absolute bottom-0 left-0 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
@@ -115,50 +115,41 @@ function SignupForm() {
         </div>
 
         {/* Content */}
-        <div className="relative z-10 space-y-10">
+        <div className="relative z-10 space-y-20 py-10">
           <div>
-            <h2 className="text-5xl font-black text-white leading-tight mb-5">
+            <h2 className="text-6xl font-black text-white leading-tight mb-6">
               Start your<br />learning<br />journey.
             </h2>
-            <p className="text-white/65 text-lg leading-relaxed max-w-xs">
+            <p className="text-white/65 text-xl leading-relaxed max-w-sm">
               Join thousands of students gaining high-income skills through structured, tutor-led cohorts.
             </p>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-2 gap-4">
             {[
               { emoji: "🎨", label: "Product Design" },
               { emoji: "💻", label: "Frontend Dev" },
               { emoji: "⚙️", label: "Backend Dev" },
               { emoji: "📊", label: "Data Analysis" },
-              { emoji: "📱", label: "Mobile Dev" },
-              { emoji: "🎓", label: "Certificate" },
             ].map(({ emoji, label }) => (
-              <div key={label} className="flex items-center gap-2.5 bg-white/10 border border-white/15 rounded-xl px-3 py-2.5">
-                <span className="text-lg">{emoji}</span>
-                <span className="text-white/80 text-xs font-bold">{label}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-2.5">
-            {[
-              "Live tutor-led cohorts",
-              "Real projects & portfolio pieces",
-              "Industry-recognised certificates",
-              "Career support & alumni network",
-            ].map((item) => (
-              <div key={item} className="flex items-center gap-3">
-                <CheckCircle2 className="w-4 h-4 text-green-300 shrink-0" />
-                <span className="text-white/70 text-sm font-medium">{item}</span>
+              <div key={label} className="flex items-center gap-3 bg-white/5 border border-white/10 rounded-2xl px-4 py-4 backdrop-blur-sm">
+                <span className="text-xl">{emoji}</span>
+                <span className="text-white text-[10px] font-black uppercase tracking-widest">{label}</span>
               </div>
             ))}
           </div>
         </div>
 
-        <p className="relative z-10 text-white/30 text-xs">
-          Soltec Engineering Ltd. © {new Date().getFullYear()}
-        </p>
+        {/* Footer info */}
+        <div className="relative z-10 flex items-center justify-between">
+          <p className="text-white/30 text-[10px] uppercase tracking-[0.3em] font-black">
+            Soltec Engineering Ltd. © {new Date().getFullYear()}
+          </p>
+          <div className="flex gap-4 items-center">
+             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-lg shadow-green-500/50" />
+             <span className="text-white/40 text-[10px] font-black uppercase tracking-widest">System Online</span>
+          </div>
+        </div>
       </div>
 
       {/* ── Right panel ── */}
@@ -413,14 +404,9 @@ function SignupForm() {
             </div>
           )}
 
-          {step !== "done" && (
-            <p className="text-center text-slate-400 text-xs mt-8">
-              By creating an account you agree to our{" "}
-              <Link href="/privacy" className="hover:underline text-slate-500">Privacy Policy</Link>
-              {" "}and{" "}
-              <Link href="/terms" className="hover:underline text-slate-500">Terms of Service</Link>.
+            <p className="text-center text-slate-400 text-[10px] font-black uppercase tracking-widest mt-8">
+              Secured & Encrypted Registration
             </p>
-          )}
         </div>
       </div>
     </div>

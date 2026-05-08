@@ -19,21 +19,15 @@ const SLUG_ICONS: Record<string, React.ElementType> = {
 };
 
 const COLORS = [
-  { label: "Rose → Fuchsia", value: "from-rose-500 via-pink-500 to-fuchsia-600" },
-  { label: "Violet → Indigo", value: "from-violet-600 via-purple-600 to-indigo-600" },
-  { label: "Amber → Red", value: "from-amber-500 via-orange-500 to-red-500" },
-  { label: "Cyan → Blue", value: "from-cyan-500 via-sky-500 to-blue-600" },
-  { label: "Emerald → Green", value: "from-emerald-500 via-teal-500 to-green-600" },
-  { label: "Indigo → Purple", value: "from-indigo-600 to-purple-600" },
+  { label: "Slate / Indigo", value: "border-indigo-500/30 bg-indigo-500/5 text-indigo-400" },
+  { label: "Slate / Teal", value: "border-teal-500/30 bg-teal-500/5 text-teal-400" },
+  { label: "Slate / Slate", value: "border-white/10 bg-white/5 text-slate-400" },
 ];
 
 const GRADIENTS = [
-  { label: "Midnight", value: "from-slate-900 via-slate-800 to-slate-900" },
-  { label: "Ocean", value: "from-blue-600 via-indigo-600 to-purple-600" },
-  { label: "Sunset", value: "from-orange-600 via-red-600 to-pink-600" },
-  { label: "Forest", value: "from-emerald-600 via-teal-600 to-cyan-600" },
-  { label: "Borealis", value: "from-fuchsia-600 via-purple-600 to-indigo-600" },
-  { label: "Cyberpunk", value: "from-yellow-500 via-pink-500 to-purple-600" },
+  { label: "Onyx", value: "bg-[#0d0d14]" },
+  { label: "Deep Sea", value: "bg-[#09090f]" },
+  { label: "Void", value: "bg-black" },
 ];
 
 export interface CourseRow {
@@ -252,12 +246,12 @@ export default function AcademyClient({ initialCourses, initialCohorts, initialT
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h2 className="text-2xl font-black text-white">Academy Management</h2>
-          <p className="text-slate-400 text-sm mt-1">Manage course tracks, cohorts, and tutors</p>
+          <h2 className="text-3xl font-black text-white tracking-tight">Academy Management</h2>
+          <p className="text-slate-500 text-sm font-black uppercase tracking-widest mt-1">Operational Control Center</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-3">
           {tab === "courses" && (
             <button
               onClick={() => { 
@@ -302,12 +296,12 @@ export default function AcademyClient({ initialCourses, initialCohorts, initialT
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 bg-slate-900 p-1 rounded-2xl w-fit">
+      <div className="flex flex-wrap gap-2 bg-[#0d0d14] p-2 rounded-2xl w-fit border border-white/5">
         {(["courses", "cohorts", "tutors"] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`px-5 py-2 rounded-xl text-sm font-bold capitalize transition-all ${tab === t ? "bg-white/10 text-white" : "text-slate-400 hover:text-white"}`}
+            className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${tab === t ? "bg-white/10 text-white shadow-lg" : "text-slate-500 hover:text-white"}`}
           >
             {t === "courses" ? `Tracks (${courses.length})` : t === "cohorts" ? `Cohorts (${cohorts.length})` : `Tutors (${tutors.length})`}
           </button>
@@ -326,15 +320,24 @@ export default function AcademyClient({ initialCourses, initialCohorts, initialT
               {courses.map(c => {
                 const Icon = SLUG_ICONS[c.slug] ?? BookOpen;
                 return (
-                  <div key={c.id} className={`group relative bg-gradient-to-br ${c.color} rounded-2xl p-6 text-white transition-all duration-300 ${!c.isActive ? "saturate-[0.25] opacity-80" : "hover:scale-[1.02] hover:shadow-2xl hover:shadow-indigo-500/20"}`}>
-                    {!c.isActive && (
-                      <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px] rounded-2xl flex items-center justify-center z-10">
-                        <div className="bg-white/20 backdrop-blur-md px-4 py-2 rounded-full flex items-center gap-2 border border-white/30">
-                          <Snowflake className="w-4 h-4 text-white animate-pulse" />
-                          <span className="text-xs font-black uppercase tracking-widest">Frozen</span>
-                        </div>
-                      </div>
-                    )}
+                  <div key={c.id} className={`group relative bg-[#09090f] border border-white/5 rounded-[32px] p-8 transition-all duration-500 ${!c.isActive ? "opacity-40 grayscale" : "hover:border-indigo-500/30 hover:bg-[#0d0d14] shadow-2xl"}`}>
+                    <div className="absolute top-6 left-6 flex gap-2">
+                       <span className="bg-white/[0.03] text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full border border-white/5">{c.level}</span>
+                    </div>
+                    
+                    <div className="w-16 h-16 bg-white/[0.03] border border-white/5 rounded-2xl flex items-center justify-center mb-8 mt-10 group-hover:border-indigo-500/30 group-hover:bg-indigo-500/10 transition-all shadow-inner">
+                      <Icon className="w-8 h-8 text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                    </div>
+
+                    <h3 className="font-black text-white text-2xl leading-tight mb-3 tracking-tight group-hover:text-indigo-400 transition-colors">{c.title}</h3>
+                    <p className="text-slate-500 text-xs font-black uppercase tracking-[0.3em] mb-8 opacity-60">{c.duration} · {c.price}</p>
+                    
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-[0.2em] text-slate-600 pt-6 border-t border-white/5">
+                      <span className="flex items-center gap-3"><Users className="w-5 h-5 text-slate-800" /> {c._count?.cohorts || 0} Cohorts</span>
+                      <Link href={`/academy/${c.slug}`} className="flex items-center gap-2 hover:text-white transition-colors group/link">
+                        Manage <ChevronRight className="w-4 h-4 group-hover/link:translate-x-1 transition-transform" />
+                      </Link>
+                    </div>
 
                     {/* Action Overlay */}
                     <div className="absolute top-4 right-4 flex gap-1 z-20 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -381,20 +384,6 @@ export default function AcademyClient({ initialCourses, initialCohorts, initialT
                       </button>
                     </div>
 
-                    <div className="absolute top-4 left-4 bg-white/15 text-white text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">
-                      {c.level}
-                    </div>
-                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center mb-3 mt-6">
-                      <Icon className="w-5 h-5" />
-                    </div>
-                    <h3 className="font-black text-lg leading-tight mb-1">{c.title}</h3>
-                    <p className="text-white/60 text-xs mb-3">{c.duration} · {c.price}</p>
-                    <div className="flex items-center justify-between text-xs text-white/70">
-                      <span className="flex items-center gap-1"><Users className="w-3 h-3" /> {c._count.cohorts} cohorts</span>
-                      <Link href={`/academy/${c.slug}`} className="flex items-center gap-1 hover:text-white transition-colors">
-                        View <ChevronRight className="w-3 h-3" />
-                      </Link>
-                    </div>
                   </div>
                 );
               })}
@@ -469,40 +458,39 @@ export default function AcademyClient({ initialCourses, initialCohorts, initialT
             </div>
           )}
 
-          {/* ── TUTORS TAB ── */}
           {tab === "tutors" && (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {lastTutorPassword && (
-                <div className="bg-green-900/20 border border-green-500/30 rounded-2xl p-5 flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-green-400 shrink-0 mt-0.5" />
+                <div className="bg-emerald-500/10 border border-emerald-500/20 rounded-[24px] p-6 flex items-start gap-4">
+                  <CheckCircle2 className="w-6 h-6 text-emerald-400 shrink-0 mt-0.5" />
                   <div>
-                    <p className="text-green-300 font-black">Tutor account created!</p>
-                    <p className="text-green-400 text-sm mt-1">
-                      Temporary password: <span className="font-black text-white bg-slate-800 px-2 py-0.5 rounded ml-1">{lastTutorPassword}</span>
+                    <p className="text-emerald-300 font-black uppercase tracking-widest text-sm">Tutor account created!</p>
+                    <p className="text-emerald-400/70 text-xs mt-1">
+                      Share this temporary password with the tutor: 
+                      <span className="font-black text-white bg-slate-800 px-3 py-1 rounded-lg ml-2 border border-white/10 select-all">{lastTutorPassword}</span>
                     </p>
-                    <p className="text-green-600 text-xs mt-1">Share this with the tutor — it won&apos;t be shown again.</p>
                   </div>
                 </div>
               )}
               {tutors.map(t => (
-                <div key={t.id} className={`group bg-slate-900 border border-white/5 rounded-2xl p-5 flex items-center gap-4 transition-all ${!t.isActive ? "opacity-50" : "hover:border-white/20"}`}>
-                  <div className={`w-12 h-12 rounded-xl bg-slate-800 flex items-center justify-center shrink-0 border border-white/5 ${!t.isActive ? "bg-slate-950" : ""}`}>
-                    <Users className={`w-6 h-6 ${!t.isActive ? "text-slate-600" : "text-indigo-400"}`} />
+                <div key={t.id} className={`group bg-[#0d0d14] border border-white/5 rounded-[24px] p-6 flex flex-col sm:flex-row sm:items-center gap-6 transition-all ${!t.isActive ? "opacity-40 grayscale" : "hover:border-white/20 hover:bg-[#12121a] shadow-xl"}`}>
+                  <div className={`w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 group-hover:border-indigo-500/30 group-hover:bg-indigo-500/5 transition-all`}>
+                    <Users className={`w-7 h-7 ${!t.isActive ? "text-slate-600" : "text-slate-400 group-hover:text-indigo-400"}`} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <p className="font-bold text-white truncate">{t.name || "Unnamed Tutor"}</p>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <p className="font-black text-white text-lg tracking-tight truncate">{t.name || "Unnamed Tutor"}</p>
                       {!t.isActive && (
                         <span className="flex items-center gap-1 bg-white/10 text-white text-[8px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full border border-white/10">
                           <Snowflake className="w-2.5 h-2.5" /> Frozen
                         </span>
                       )}
                     </div>
-                    <p className="text-slate-500 text-xs truncate">{t.email}</p>
+                    <p className="text-slate-500 text-xs font-bold truncate uppercase tracking-tighter">{t.email}</p>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <div className="hidden sm:block text-right mr-4">
-                      <p className="text-white text-sm font-black">{t.cohortCount}</p>
+                  <div className="flex items-center justify-between sm:justify-end gap-6">
+                    <div className="text-right">
+                      <p className="text-white text-lg font-black">{t.cohortCount}</p>
                       <p className="text-slate-500 text-[10px] uppercase font-bold tracking-tighter">Cohorts</p>
                     </div>
                     <button 

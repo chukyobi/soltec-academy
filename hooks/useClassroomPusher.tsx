@@ -1,13 +1,19 @@
+'use client';
+
 import { useEffect } from 'react';
 import { getPusherClient } from '@/lib/pusher';
 import { toast } from 'react-hot-toast';
 import React from 'react';
+import { Bell } from 'lucide-react';
 
 export function useClassroomPusher(
   cohortId: string, 
   userId: string, 
   onMessage: (msg: any) => void,
-  onLiveChange?: (isLive: boolean) => void
+  onLiveChange?: (isLive: boolean) => void,
+  onReactionUpdate?: (data: any) => void,
+  onBroadcastReceived?: (data: any) => void,
+  onAttendanceUpdate?: (data: any) => void
 ) {
   useEffect(() => {
     if (!cohortId) return;
@@ -15,11 +21,29 @@ export function useClassroomPusher(
     const pusherClient = getPusherClient();
     if (!pusherClient) return;
 
-    // 1. Subscribe to classroom channel for messages & live status
     const channel = pusherClient.subscribe(`classroom-${cohortId}`);
     
-    channel.bind('new-message', (data: any) => {
-      onMessage(data);
+    channel.bind('new-message', (data: any) => onMessage(data));
+
+    channel.bind('reaction-updated', (data: any) => {
+      if (onReactionUpdate) onReactionUpdate(data);
+    });
+
+    channel.bind('broadcast-received', (data: any) => {
+      if (onBroadcastReceived) onBroadcastReceived(data);
+      toast.custom((t) => (
+        <div className={`${t.visible ? 'animate-in zoom-in-95' : 'animate-out zoom-out-95'} max-w-md w-full bg-[#0d0d14] border border-red-500/30 rounded-[32px] p-8 shadow-[0_40px_80px_-20px_rgba(239,68,68,0.2)]`}>
+          <div className="flex items-start gap-5">
+             <div className="w-14 h-14 rounded-2xl bg-red-500/10 flex items-center justify-center border border-red-500/20 shrink-0"><Bell className="w-7 h-7 text-red-500 animate-bounce"/></div>
+             <div>
+                <p className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] mb-1">Broadcast Alert</p>
+                <h4 className="text-white font-black text-lg leading-tight">{data.title}</h4>
+                <p className="text-slate-400 text-sm mt-2 leading-relaxed">{data.message}</p>
+                <p className="text-[9px] font-black text-slate-700 uppercase mt-4 tracking-widest">Sent by {data.senderName}</p>
+             </div>
+          </div>
+        </div>
+      ), { duration: 10000 });
     });
 
     channel.bind('live-status-changed', (data: any) => {
@@ -29,6 +53,17 @@ export function useClassroomPusher(
       } else {
         toast.error(`⏹️ Live Class has ended.`, { duration: 4000 });
       }
+    });
+
+    channel.bind('stream-status', (data: any) => {
+       if (data.status === 'ended') {
+          if (onLiveChange) onLiveChange(false);
+          toast.error("Stream terminated: All participants left.", { icon: '⏹️' });
+       }
+    });
+
+    channel.bind('attendance-updated', (data: any) => {
+      if (onAttendanceUpdate) onAttendanceUpdate(data);
     });
 
     channel.bind('session-scheduled', (data: any) => {

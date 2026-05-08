@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import { verifyPassword, createSession } from "@/lib/auth";
+import { verifyPassword, createSession, generateOtp } from "@/lib/auth";
 import { serverError } from "@/lib/api-error";
+import { sendOtpEmail } from "@/lib/mail";
 
 export async function POST(req: Request) {
   try {
@@ -40,9 +41,27 @@ export async function POST(req: Request) {
     }
 
     if (!user.emailVerified) {
+      // Generate new OTP
+      const otp = generateOtp();
+      const expiresAt = new Date(Date.now() + 15 * 60_000);
+
+      // Update or create verification record
+      await prisma.emailVerification.upsert({
+        where: { id: (await prisma.emailVerification.findFirst({ where: { userId: user.id } }))?.id ?? 'new' },
+        update: { otp, expiresAt, usedAt: null },
+        create: { userId: user.id, otp, expiresAt }
+      });
+
+      await sendOtpEmail(user.email, user.name || user.email.split("@")[0], otp);
+
       return NextResponse.json(
-        { error: "Please verify your email before signing in.", userId: user.id },
-        { status: 403 }
+        { 
+          success: true,
+          needsVerification: true, 
+          userId: user.id,
+          message: "Account not verified. A new verification code has been sent to your email." 
+        },
+        { status: 200 }
       );
     }
 

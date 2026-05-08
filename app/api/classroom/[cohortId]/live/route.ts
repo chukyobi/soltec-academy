@@ -35,7 +35,9 @@ export async function POST(req: Request, { params }: { params: Promise<{ cohortI
       await pusherServer.trigger(`classroom-${cohortId}`, 'new-message', {
         id: `sys-${Date.now()}`,
         userId: 'system',
-        content: isLive ? `🚀 Tutor ${session.user.name} has started a Live Class!` : `⏹️ The Live Class has ended.`,
+        content: isLive 
+          ? `🚀 Tutor ${session.user.name} has started a Live Class! [JOIN_LIVE_STREAM]` 
+          : `⏹️ The Live Class has ended.`,
         createdAt: new Date(),
         user: { name: 'System', role: 'ADMIN' }
       });

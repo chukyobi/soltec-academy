@@ -81,7 +81,7 @@ export function Navbar({ theme = 'light', student }: NavProps) {
       <nav
         ref={navRef}
         className={cn(
-          'fixed top-0 w-full z-50 transition-all duration-300 opacity-0',
+          'fixed top-0 w-full z-50 transition-all duration-300',
           isScrolled
             ? 'bg-white/90 backdrop-blur-md shadow-sm border-b border-gray-100 py-1'
             : 'bg-transparent py-1'
@@ -200,7 +200,7 @@ export function Navbar({ theme = 'light', student }: NavProps) {
                   /* ── Logged-out: Get Started only ── */
                   <>
                     <Link
-                      href="/academy"
+                      href="/student/login"
                       className={cn(
                         'text-sm font-bold px-4 py-2 rounded-xl transition-all',
                         isDark
@@ -278,8 +278,8 @@ export function Navbar({ theme = 'light', student }: NavProps) {
               </>
             ) : (
               <>
-                <Link href="/academy" onClick={() => setIsOpen(false)} className="block w-full text-center py-4 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-500 transition-all">
-                  Explore Academy →
+                <Link href="/student/login" onClick={() => setIsOpen(false)} className="block w-full text-center py-4 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-500 transition-all">
+                  Get Started →
                 </Link>
                 <Link href="/tutor/login" onClick={() => setIsOpen(false)} className="block text-center text-xs text-slate-400 hover:text-slate-600 transition-colors">
                   Tutor Portal →

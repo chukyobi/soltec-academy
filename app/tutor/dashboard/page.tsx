@@ -8,6 +8,7 @@ import {
   BarChart2, Code2, Database, MonitorSmartphone,
   CheckSquare, ArrowRight, Bell
 } from "lucide-react";
+import { UserMenu } from "@/components/UserMenu";
 
 export const revalidate = 0;
 
@@ -108,9 +109,10 @@ export default async function TutorDashboardPage() {
           </div>
         </div>
         <div className="flex items-center gap-6">
-          <Link href="/api/tutor/auth/logout" className="group flex items-center gap-2 text-slate-500 hover:text-red-400 text-xs font-black uppercase tracking-widest transition-all">
-            <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> Sign Out
-          </Link>
+          <UserMenu 
+            user={{ name: user?.name || session.user.name, email: user?.email || session.user.email, image: user?.image || session.user.image }} 
+            role="tutor" 
+          />
         </div>
       </header>
 

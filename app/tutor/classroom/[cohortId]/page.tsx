@@ -38,6 +38,8 @@ export default async function TutorClassroomPage({ params }:{ params: Promise<{c
       }}
       tutorName={session.user.name ?? "Tutor"}
       userId={session.userId}
+      userEmail={session.user.email}
+      userImage={session.user.image}
       initSettings={cohort.settings ?? null}
     />
   );

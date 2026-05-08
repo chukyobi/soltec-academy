@@ -12,5 +12,5 @@ export async function GET() {
   const proto = headersList.get("x-forwarded-proto") ?? "http";
   const origin = `${proto}://${host}`;
 
-  return NextResponse.redirect(`${origin}/`);
+  return NextResponse.redirect(`${origin}/student/login`);
 }

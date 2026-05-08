@@ -4,6 +4,8 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, ChevronRight, GraduationCap, Zap, Play, CheckCircle2, Star } from "lucide-react";
 import confetti from "canvas-confetti";
+import { driver } from "driver.js";
+import "driver.js/dist/driver.css";
 
 interface Props {
   userName: string;
@@ -40,39 +42,73 @@ export function WelcomeTour({ userName, hasSeenWelcome: initialWelcome, hasSeenT
     }
   };
 
-  const handleNextTour = async () => {
-    if (tourStep === null) return;
-    if (tourStep < TOUR_STEPS.length - 1) {
-      setTourStep(tourStep + 1);
-    } else {
-      setTourStep(null);
-      // Update DB
-      await fetch("/api/student/profile/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ field: "hasSeenTour" })
+  useEffect(() => {
+    if (tourStep === 0) {
+      const driverObj = driver({
+        showProgress: true,
+        allowClose: true,
+        animate: true,
+        overlayColor: "rgba(0, 0, 0, 0.85)",
+        stagePadding: 10,
+        popoverClass: 'soltec-driver-popover',
+        steps: [
+          { 
+            popover: { 
+              title: "Welcome to Soltec Academy! 🚀", 
+              description: "Let's take a quick 1-minute tour of your new high-performance learning command center." 
+            } 
+          },
+          { 
+            element: '[data-tour="stats"]', 
+            popover: { 
+              title: "Real-time Metrics", 
+              description: "Monitor your active tracks and pending tasks. Keep these numbers moving to accelerate your growth!" 
+            } 
+          },
+          { 
+            element: '[data-tour="tracks"]', 
+            popover: { 
+              title: "Industry Tracks", 
+              description: "This is where your enrolled cohorts live. Each track is a gateway to a high-demand tech career." 
+            } 
+          },
+          { 
+            element: '[data-tour="classroom-btn"]', 
+            popover: { 
+              title: "Enter the Classroom ⚡", 
+              description: "Your main gateway. Access live sessions, collaborate with mentors, and dive into the curriculum here." 
+            } 
+          },
+          { 
+            element: '[data-tour="assignments"]', 
+            popover: { 
+              title: "Priority Missions", 
+              description: "Assignments from your tutors appear here. Submit on time to keep your academic standing 'In Training'." 
+            } 
+          },
+          {
+            popover: {
+              title: "You're All Set! ✨",
+              description: "Master your craft, build the future, and enjoy your journey with Soltec Academy."
+            }
+          }
+        ],
+        onDestroyStarted: () => {
+          driverObj.destroy();
+          // Update DB
+          fetch("/api/student/profile/onboarding", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ field: "hasSeenTour" })
+          });
+          setTourStep(null);
+        }
       });
+      
+      // Delay slightly to ensure elements are mounted before tour starts
+      setTimeout(() => driverObj.drive(), 500);
     }
-  };
-
-  const TOUR_STEPS = [
-    {
-      title: "Your Dashboard",
-      text: "This is your learning command center. All your enrolled tracks and progress appear here.",
-      target: "body",
-      position: "center"
-    },
-    {
-      title: "Track Status",
-      text: "Check your payment status and remaining balance for each track at a glance.",
-      target: "[data-tour='stats']",
-    },
-    {
-      title: "Classroom Access",
-      text: "Click 'Enter Classroom' to access your live sessions, recordings, and curriculum.",
-      target: "[data-tour='classroom-btn']",
-    }
-  ];
+  }, [tourStep]);
 
   return (
     <>
@@ -139,47 +175,74 @@ export function WelcomeTour({ userName, hasSeenWelcome: initialWelcome, hasSeenT
         )}
       </AnimatePresence>
 
-      <AnimatePresence>
-        {tourStep !== null && (
-          <div className="fixed inset-0 z-[90] pointer-events-none">
-             <div className="absolute inset-0 bg-black/40 backdrop-blur-[2px]" />
-             
-             <div className="absolute inset-0 flex items-center justify-center p-6">
-               <motion.div 
-                 initial={{ opacity: 0, y: 10 }}
-                 animate={{ opacity: 1, y: 0 }}
-                 className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl pointer-events-auto border border-indigo-100"
-               >
-                 <div className="flex items-center justify-between mb-4">
-                   <div className="flex items-center gap-2">
-                     <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center text-white font-black text-xs">
-                       {tourStep + 1}
-                     </div>
-                     <span className="text-xs font-black text-slate-400 uppercase tracking-widest">Tour Step</span>
-                   </div>
-                   <div className="flex gap-1">
-                     {TOUR_STEPS.map((_, i) => (
-                       <div key={i} className={`h-1 w-4 rounded-full ${i === tourStep ? "bg-indigo-600" : "bg-slate-100"}`} />
-                     ))}
-                   </div>
-                 </div>
-
-                 <h3 className="text-xl font-black text-slate-900 mb-2">{TOUR_STEPS[tourStep].title}</h3>
-                 <p className="text-slate-500 text-sm leading-relaxed mb-8">
-                   {TOUR_STEPS[tourStep].text}
-                 </p>
-
-                 <button 
-                   onClick={handleNextTour}
-                   className="w-full py-3.5 bg-indigo-600 text-white font-black rounded-xl flex items-center justify-center gap-2 hover:bg-indigo-500 transition-all"
-                 >
-                   {tourStep === TOUR_STEPS.length - 1 ? "Finish Tour" : "Got it, Next"} <ChevronRight className="w-4 h-4" />
-                 </button>
-               </motion.div>
-             </div>
-          </div>
-        )}
-      </AnimatePresence>
     </>
   );
 }
+
+const styles = `
+  .soltec-driver-popover {
+    background: #0d0d14 !important;
+    color: white !important;
+    border-radius: 24px !important;
+    padding: 24px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+    max-width: 320px !important;
+    backdrop-filter: blur(16px);
+  }
+
+  .soltec-driver-popover .driver-popover-title {
+    font-family: inherit !important;
+    font-weight: 900 !important;
+    font-size: 18px !important;
+    color: white !important;
+    margin-bottom: 8px !important;
+    letter-spacing: -0.025em !important;
+  }
+
+  .soltec-driver-popover .driver-popover-description {
+    font-family: inherit !important;
+    font-size: 14px !important;
+    color: #94a3b8 !important;
+    line-height: 1.6 !important;
+  }
+
+  .soltec-driver-popover .driver-popover-progress-text {
+    color: #6366f1 !important;
+    font-weight: 900 !important;
+    font-size: 10px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.1em !important;
+  }
+
+  .soltec-driver-popover .driver-popover-footer button {
+    background: #6366f1 !important;
+    color: white !important;
+    text-shadow: none !important;
+    border: none !important;
+    border-radius: 12px !important;
+    font-weight: 800 !important;
+    font-size: 12px !important;
+    padding: 8px 16px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.05em !important;
+    transition: all 0.2s ease !important;
+  }
+
+  .soltec-driver-popover .driver-popover-footer button:hover {
+    background: #4f46e5 !important;
+    transform: translateY(-1px) !important;
+  }
+
+  .soltec-driver-popover .driver-popover-arrow {
+    border-bottom-color: #0d0d14 !important;
+    border-top-color: #0d0d14 !important;
+  }
+`;
+
+if (typeof document !== 'undefined') {
+  const styleTag = document.createElement('style');
+  styleTag.innerHTML = styles;
+  document.head.appendChild(styleTag);
+}
+

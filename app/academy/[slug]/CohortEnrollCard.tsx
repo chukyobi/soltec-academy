@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { usePaystackPayment } from "react-paystack";
 import Link from "next/link";
 import {
   Calendar, Users, ChevronDown, Shield, Check,
@@ -105,45 +106,66 @@ export default function CohortEnrollCard({
     : 0;
   const balanceNGN = selected ? course.basePrice - amountNGN : 0;
 
-  // ── Demo payment confirmation stage ──
-  async function handleDemoEnroll() {
+  const paystackConfig = {
+    reference: (new Date()).getTime().toString() + Math.floor(Math.random() * 1000000),
+    email: email || userEmail || "student@soltec.com",
+    amount: amountNGN * 100, // Kobo
+    publicKey: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY || "pk_test_af44d0fa0c346053d744680cba87fbc8b66723da",
+  };
+
+  const initializePayment = usePaystackPayment(paystackConfig);
+
+  async function handlePaystackEnroll() {
     if (!selected) return;
     setStage("processing");
     setError(null);
-    try {
-      // Simulate brief processing
-      await new Promise(res => setTimeout(res, 1500));
-      const res = await fetch("/api/academy/enroll", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cohortId: selected.id,
-          paymentType: payType,
-          email: isNew ? email : undefined,
-          studentId: !isNew ? studentId : undefined,
-          isNew: isNew
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        if (data.code === "AUTH_REQUIRED") {
-           setError(data.error);
-           setStage("studentId");
-           return;
+
+    const onSuccess = async (reference: any) => {
+      try {
+        const res = await fetch("/api/academy/enroll", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cohortId: selected.id,
+            paymentType: payType,
+            email: email || undefined,
+            studentId: !isNew ? studentId : undefined,
+            isNew: isNew,
+            reference: reference.reference
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          if (data.code === "AUTH_REQUIRED") {
+             setError(data.error);
+             setStage("studentId");
+             return;
+          }
+          throw new Error(data.error ?? "Enrollment failed");
         }
-        throw new Error(data.error ?? "Enrollment failed");
+        
+        if (data.redirect) {
+          setStage("success");
+          setTimeout(() => { window.location.href = data.redirect; }, 2000);
+        } else {
+          setStage("success");
+          setTimeout(() => { window.location.href = "/student/profile"; }, 2200);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Something went wrong.");
+        setStage("confirm");
       }
-      
-      if (data.redirect) {
-        setStage("success");
-        setTimeout(() => { window.location.href = data.redirect; }, 2000);
-      } else {
-        setStage("success");
-        setTimeout(() => { window.location.href = "/student/profile"; }, 2200);
-      }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Something went wrong.");
+    };
+
+    const onClose = () => {
       setStage("confirm");
+      setError("Payment window closed.");
+    };
+
+    if (amountNGN === 0) {
+      onSuccess({ reference: `free_${Date.now()}` });
+    } else {
+      initializePayment({ onSuccess, onClose } as any);
     }
   }
 
@@ -211,13 +233,24 @@ export default function CohortEnrollCard({
               required
             />
           </div>
+          <div>
+            <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">Email Address</label>
+            <input 
+              type="email" 
+              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-slate-900 text-sm focus:outline-none focus:border-indigo-500"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </div>
           {error && (
             <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-xl px-3 py-2 text-red-700 text-[10px] font-bold">
               <AlertCircle className="w-3.5 h-3.5 shrink-0" /> {error}
             </div>
           )}
           <button 
-            disabled={!studentId.includes("-")}
+            disabled={!studentId.includes("-") || !email.includes("@")}
             onClick={() => { setError(null); setStage("confirm"); }}
             className="w-full py-4 bg-slate-900 text-white font-black rounded-2xl disabled:opacity-50 transition-all"
           >
@@ -287,9 +320,10 @@ export default function CohortEnrollCard({
             )}
           </div>
 
-          {/* Demo notice */}
-          <div className="bg-indigo-50 border border-indigo-200 rounded-xl px-4 py-3 text-xs text-indigo-700">
-            <strong>Demo Mode:</strong> No real payment is processed. Click &ldquo;Confirm Enrollment&rdquo; to simulate a successful payment.
+          {/* Secure payment notice */}
+          <div className="bg-green-50 border border-green-200 rounded-xl px-4 py-3 text-xs text-green-700 flex items-center gap-2">
+            <Lock className="w-4 h-4" />
+            <strong>Secure Payment:</strong> You will be redirected to Paystack to complete your transaction securely.
           </div>
 
           {error && (
@@ -300,13 +334,13 @@ export default function CohortEnrollCard({
 
           <button
             id="confirm-enroll-btn"
-            onClick={handleDemoEnroll}
+            onClick={handlePaystackEnroll}
             disabled={stage === "processing"}
             className={`w-full py-4 bg-gradient-to-r ${gradient} hover:opacity-90 disabled:opacity-70 text-white font-black rounded-2xl text-sm flex items-center justify-center gap-2 transition-all shadow-lg`}
           >
             {stage === "processing"
               ? <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
-              : <><CreditCard className="w-4 h-4" /> Confirm Enrollment</>
+              : <><CreditCard className="w-4 h-4" /> Pay with Paystack</>
             }
           </button>
           <button

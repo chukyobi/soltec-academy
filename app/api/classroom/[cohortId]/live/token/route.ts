@@ -13,21 +13,22 @@ export async function GET(req: Request, { params }: { params: Promise<{ cohortId
 
     const room = `classroom-${cohortId}`;
     const participantName = session.user.name || "Anonymous";
-    const participantIdentity = `${session.userId}-${Date.now()}`;
 
     const at = new AccessToken(
       process.env.LIVEKIT_API_KEY,
       process.env.LIVEKIT_API_SECRET,
       {
-        identity: participantIdentity,
+        identity: session.userId, // Stable identity
         name: participantName,
       }
     );
 
+    const isTutor = session.user.role === "TUTOR" || session.user.role === "ADMIN";
+
     at.addGrant({
       roomJoin: true,
       room: room,
-      canPublish: true,
+      canPublish: isTutor,
       canSubscribe: true,
       canPublishData: true,
     });

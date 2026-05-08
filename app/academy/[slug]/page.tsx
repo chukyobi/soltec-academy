@@ -8,7 +8,7 @@ import {
   Code2, Database, BarChart2, Layers, MonitorSmartphone,
   GraduationCap, ArrowLeft, Shield,
 } from "lucide-react";
-import CohortEnrollCard from "./CohortEnrollCard";
+import CohortEnrollCardWrapper from "./CohortEnrollCardWrapper";
 import Link from "next/link";
 
 export const revalidate = 60;
@@ -242,7 +242,7 @@ export default async function AcademyCourseDetailPage({
 
           {/* ── Right: Enroll Card ── */}
           <div className="lg:col-span-1">
-            <CohortEnrollCard
+            <CohortEnrollCardWrapper
               course={{ id: course.id, title: course.title, slug: course.slug, price: course.price, basePrice: course.basePrice }}
               cohorts={course.cohorts.map((c) => ({
                 id: c.id,

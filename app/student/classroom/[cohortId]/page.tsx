@@ -76,6 +76,8 @@ export default async function StudentClassroomPage({
       studentName={session.user.name ?? "Student"}
       studentId={session.user.studentId ?? ""}
       userId={session.userId}
+      userEmail={session.user.email}
+      userImage={session.user.image}
       isFirstVisit={!session.user.hasSeenWelcome}
     />
   );

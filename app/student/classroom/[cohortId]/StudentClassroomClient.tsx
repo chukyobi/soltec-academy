@@ -9,6 +9,7 @@ import { MentionInput } from "@/components/classroom/MentionInput";
 import { LiveClassroom } from "@/components/classroom/LiveClassroom";
 import { ReactionList } from "@/components/classroom/ReactionList";
 import { Toaster, toast } from "react-hot-toast";
+import { UserMenu } from "@/components/UserMenu";
 
 type Tab = "home"|"chat"|"assignments"|"assessments"|"attendance"|"curriculum"|"students";
 
@@ -26,9 +27,22 @@ interface Cohort {
   isLive: boolean;
   liveRoomId: string|null;
 }
-interface Props { cohort:Cohort; modules:{title:string;lessons:{title:string}[]}[]; totalLessons:number; studentName:string; studentId:string; userId:string; isFirstVisit:boolean; }
+interface Props { 
+  cohort:Cohort; 
+  modules:{title:string;lessons:{title:string}[]}[]; 
+  totalLessons:number; 
+  studentName:string; 
+  studentId:string; 
+  userId:string; 
+  userEmail:string;
+  userImage?:string|null;
+  isFirstVisit:boolean; 
+}
 
-export default function StudentClassroomClient({ cohort: initialCohort, modules, totalLessons, studentName, studentId, userId, isFirstVisit }:Props) {
+export default function StudentClassroomClient({ 
+  cohort: initialCohort, modules, totalLessons, 
+  studentName, studentId, userId, userEmail, userImage, isFirstVisit 
+}:Props) {
   const [tab, setTab] = useState<Tab>("home");
   const [isLive, setIsLive] = useState(initialCohort.isLive);
   const [liveToken, setLiveToken] = useState<string|null>(null);
@@ -83,15 +97,29 @@ export default function StudentClassroomClient({ cohort: initialCohort, modules,
     if(tab==="attendance") fetchAttendance();
   }, [fetchMessages, fetchUsers, fetchSchedules, fetchTopStudents, fetchAssignments, fetchAttendance, tab]);
 
-  useClassroomPusher(initialCohort.id, userId, (newMsg) => {
-    setMessages(prev => prev.find(m => m.id === newMsg.id) ? prev : [...prev, newMsg]);
-  }, (liveStatus) => {
-    setIsLive(liveStatus);
-    if (!liveStatus) {
-      setLiveToken(null);
-      setActiveSessionId(null);
+  useClassroomPusher(
+    initialCohort.id, 
+    userId, 
+    (newMsg) => {
+      setMessages(prev => prev.find(m => m.id === newMsg.id) ? prev : [...prev, newMsg]);
+    }, 
+    (liveStatus) => {
+      setIsLive(liveStatus);
+      if (!liveStatus) {
+        setLiveToken(null);
+        setActiveSessionId(null);
+      }
+    },
+    (reactionData) => {
+      setMessages(prev => prev.map(m => {
+        if (m.id === reactionData.messageId) {
+          // If the message has no reactions yet, create the object
+          return { ...m, reactions: reactionData.counts };
+        }
+        return m;
+      }));
     }
-  });
+  );
 
   // Handle reaction updates from Pusher
   useEffect(() => {
@@ -214,11 +242,19 @@ export default function StudentClassroomClient({ cohort: initialCohort, modules,
               <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.2em] truncate opacity-60">{initialCohort.course.title}</p>
             </div>
           </div>
-          <div className="flex items-center gap-6">
-            <button className="text-slate-500 hover:text-white transition-colors relative">
+          <div className="flex items-center gap-4">
+            <button className="hidden sm:flex items-center justify-center w-10 h-10 rounded-xl bg-white/5 border border-white/10 text-slate-500 hover:text-white transition-all relative">
                <Bell className="w-5 h-5" />
-               <div className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full border-2 border-[#09090f]" />
+               <div className="absolute top-2 right-2 w-2 h-2 bg-indigo-500 rounded-full border-2 border-[#09090f]" />
             </button>
+            
+            <div className="h-6 w-[1px] bg-white/10 mx-1 hidden sm:block" />
+
+            <UserMenu 
+              user={{ name: studentName, email: userEmail, image: userImage }} 
+              role="student" 
+            />
+
             {isLive && !liveToken && (
               <button onClick={joinLive} disabled={joiningLive} className="bg-red-600 hover:bg-red-500 text-white px-6 py-3 rounded-2xl text-xs font-black uppercase tracking-widest flex items-center gap-2 transition-all shadow-2xl shadow-red-500/20 active:scale-95">
                 {joiningLive ? <Loader2 className="w-4 h-4 animate-spin"/> : <Video className="w-5 h-5"/>}
@@ -332,11 +368,27 @@ export default function StudentClassroomClient({ cohort: initialCohort, modules,
               {messages.map((m:any)=>{
                 const isMe = m.userId === userId;
                 const isSystem = m.userId === 'system';
-                if (isSystem) return (
-                  <div key={m.id} className="flex justify-center animate-in fade-in zoom-in-95">
-                    <div className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-xl">{m.content}</div>
-                  </div>
-                );
+                if (isSystem) {
+                  const hasJoinLink = m.content.includes('[JOIN_LIVE_STREAM]');
+                  const cleanContent = m.content.replace('[JOIN_LIVE_STREAM]', '');
+                  
+                  return (
+                    <div key={m.id} className="flex flex-col items-center gap-4 animate-in fade-in zoom-in-95">
+                      <div className="bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-xl">
+                        {cleanContent}
+                      </div>
+                      {hasJoinLink && !liveToken && isLive && (
+                        <button 
+                          onClick={joinLive}
+                          className="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-2xl shadow-red-500/40 animate-bounce active:scale-95 transition-all"
+                        >
+                          <Video className="w-4 h-4"/>
+                          Join Live Session Now
+                        </button>
+                      )}
+                    </div>
+                  );
+                }
                 return (
                   <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-4 duration-500`}>
                     <div className={`flex gap-4 max-w-[85%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>

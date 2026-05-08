@@ -23,13 +23,17 @@ export function LiveClassroom({ roomName, token, onLeave }: Props) {
       <LiveKitRoom
         video={true}
         audio={true}
+        connect={true}
         token={token}
         serverUrl={process.env.NEXT_PUBLIC_LIVEKIT_URL}
         onDisconnected={onLeave}
         data-lk-theme="default"
         className="h-full"
       >
-        <VideoConference />
+        <VideoConference 
+           chatPlaceholder="Chat with students..." 
+           SettingsMenuIcon={null}
+        />
         <RoomAudioRenderer />
         <div className="absolute top-4 right-4 z-50">
            <button onClick={onLeave} className="p-2 bg-red-600 hover:bg-red-500 text-white rounded-full shadow-lg transition-all">

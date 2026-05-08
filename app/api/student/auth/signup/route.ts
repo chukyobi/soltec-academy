@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { hashPassword, generateOtp } from "@/lib/auth";
 import { serverError } from "@/lib/api-error";
+import { sendOtpEmail } from "@/lib/mail";
 
 export async function POST(req: Request) {
   try {
@@ -43,9 +44,10 @@ export async function POST(req: Request) {
     const otp = generateOtp();
     const expiresAt = new Date(Date.now() + 15 * 60_000);
     await prisma.emailVerification.create({ data: { userId: user.id, otp, expiresAt } });
-
-    // TODO: In production, send OTP via email mailer (currently always returned for display)
-    return NextResponse.json({ success: true, userId: user.id, devOtp: otp }, { status: 201 });
+    
+    const userName = name || email.split("@")[0];
+    await sendOtpEmail(email, userName, otp);
+    return NextResponse.json({ success: true, userId: user.id }, { status: 201 });
   } catch (err) {
     return serverError(err, "Student signup", "signup");
   }

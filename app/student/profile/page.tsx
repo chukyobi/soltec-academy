@@ -5,6 +5,7 @@ import prisma from "@/lib/prisma";
 import { GraduationCap, LogOut, ArrowRight, CheckCircle2, AlertCircle, Clock, BookOpen, Users, CalendarDays, Award, ChevronRight, ClipboardList, CheckSquare, Zap, Star, Trophy, Bell, Radio } from "lucide-react";
 import { WelcomeTour } from "@/components/student/WelcomeTour";
 import { ProfileImageUpload } from "@/components/student/ProfileImageUpload";
+import { UserMenu } from "@/components/UserMenu";
 
 export const revalidate = 0;
 
@@ -71,11 +72,13 @@ export default async function StudentProfilePage() {
             <div className="hidden sm:block h-8 w-[1px] bg-white/10 mx-1" />
             <p className="text-white font-black text-lg tracking-tighter uppercase leading-none hidden sm:block">Student Portal</p>
           </Link>
-          <div className="flex items-center gap-8">
+          <div className="flex items-center gap-6">
             <Link href="/academy" className="text-slate-400 hover:text-white text-[10px] font-black uppercase tracking-[0.2em] hidden sm:block transition-all">Browse Tracks</Link>
-            <Link href="/api/student/auth/logout" className="group flex items-center gap-2 text-slate-500 hover:text-red-400 text-[10px] font-black uppercase tracking-[0.2em] transition-all">
-              <LogOut className="w-4 h-4 group-hover:-translate-x-1 transition-transform"/> Sign Out
-            </Link>
+            <div className="h-6 w-[1px] bg-white/10 mx-1 hidden sm:block" />
+            <UserMenu 
+              user={{ name: session.user.name, email: session.user.email, image: session.user.image }} 
+              role="student" 
+            />
           </div>
         </div>
       </header>      <div className="max-w-6xl mx-auto px-8 py-12 space-y-12">

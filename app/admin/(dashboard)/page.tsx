@@ -139,7 +139,7 @@ export default async function AdminDashboardPage() {
               return (
                 <div
                   key={track.id}
-                  className={`relative bg-gradient-to-br ${track.color} rounded-2xl p-5 text-white shadow-lg`}
+                  className="relative bg-slate-900 border border-white/5 rounded-2xl p-5 text-white shadow-lg group hover:border-white/10 transition-colors"
                 >
                   {/* Level badge */}
                   <div className="absolute top-3 right-3 bg-black/20 text-white/80 text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded-full">

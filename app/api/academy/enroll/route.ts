@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession, createSession } from "@/lib/auth";
 import { serverError } from "@/lib/api-error";
+import { sendEnrollmentEmail } from "@/lib/mail";
 import crypto from "crypto";
 
 // POST /api/academy/enroll
@@ -71,6 +72,22 @@ export async function POST(req: Request) {
 
     const reference = clientRef ?? `demo_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
 
+    if (clientRef && process.env.PAYSTACK_SECRET_KEY) {
+      try {
+        const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${clientRef}`, {
+          headers: {
+            Authorization: `Bearer ${process.env.PAYSTACK_SECRET_KEY}`,
+          },
+        });
+        const verifyData = await verifyRes.json();
+        if (!verifyData.status || verifyData.data.status !== "success") {
+          return NextResponse.json({ error: "Payment verification failed or payment not successful." }, { status: 400 });
+        }
+      } catch (err) {
+        return NextResponse.json({ error: "Failed to verify payment with Paystack." }, { status: 500 });
+      }
+    }
+
     if (userId) {
       // SIGNED IN OR IDENTIFIED BY ID: Create enrollment immediately
       const enrollment = await prisma.cohortEnrollment.create({
@@ -96,6 +113,17 @@ export async function POST(req: Request) {
       // If they weren't logged in but identified by ID, create a session now
       if (!session) {
         await createSession(userId, "student");
+      }
+
+      const user = await prisma.user.findUnique({ where: { id: userId }, select: { name: true, email: true } });
+      if (user) {
+        await sendEnrollmentEmail(
+          user.email,
+          user.name || "Student",
+          cohort.name,
+          `NGN ${amountPaid.toLocaleString()}`,
+          reference
+        ).catch(e => console.error("Enrollment email failed:", e));
       }
 
       return NextResponse.json({ success: true, redirect: "/student/profile" }, { status: 201 });
@@ -133,12 +161,29 @@ export async function POST(req: Request) {
         },
       });
 
+      // Encrypt the payload
+      const SECRET_KEY = process.env.PAYSTACK_SECRET_KEY || "fallback_secret_key_123456789012";
+      const iv = crypto.randomBytes(16);
+      const cipher = crypto.createCipheriv("aes-256-gcm", Buffer.from(SECRET_KEY.padEnd(32).slice(0, 32)), iv);
+      let encrypted = cipher.update(JSON.stringify({ studentId, email }), "utf8", "hex");
+      encrypted += cipher.final("hex");
+      const authTag = cipher.getAuthTag().toString("hex");
+      const enc = `${iv.toString("hex")}:${authTag}:${encrypted}`;
+
+      await sendEnrollmentEmail(
+        email!,
+        "Student",
+        cohort.name,
+        `NGN ${amountPaid.toLocaleString()}`,
+        reference
+      ).catch(e => console.error("Enrollment email failed:", e));
+
       return NextResponse.json({ 
         success: true, 
         isNew: true, 
         studentId, 
         email,
-        redirect: `/student/signup?studentId=${studentId}&email=${email}`
+        redirect: `/student/signup?enc=${enc}`
       }, { status: 201 });
     }
   } catch (err: unknown) {

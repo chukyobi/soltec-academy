@@ -8,6 +8,7 @@ import { MentionInput } from "@/components/classroom/MentionInput";
 import { LiveClassroom } from "@/components/classroom/LiveClassroom";
 import { ReactionList } from "@/components/classroom/ReactionList";
 import { Toaster, toast } from "react-hot-toast";
+import { UserMenu } from "@/components/UserMenu";
 
 type Tab = "students"|"assignments"|"curriculum"|"attendance"|"chat"|"settings"|"schedule";
 interface Props {
@@ -21,10 +22,14 @@ interface Props {
   };
   tutorName: string;
   userId: string;
+  userEmail: string;
+  userImage?: string|null;
   initSettings: any;
 }
 
-export default function TutorClassroomClient({ cohort: initialCohort, tutorName, userId, initSettings }:Props) {
+export default function TutorClassroomClient({ 
+  cohort: initialCohort, tutorName, userId, userEmail, userImage, initSettings 
+}:Props) {
   const [tab, setTab] = useState<Tab>("chat");
   const [isLive, setIsLive] = useState(initialCohort.isLive);
   const [liveToken, setLiveToken] = useState<string|null>(null);
@@ -56,15 +61,30 @@ export default function TutorClassroomClient({ cohort: initialCohort, tutorName,
 
   useEffect(()=>{ load(); },[load]);
 
-  useClassroomPusher(initialCohort.id, userId, (newMsg) => {
-    setMessages(prev => prev.find(m => m.id === newMsg.id) ? prev : [...prev, newMsg]);
-  }, (status) => {
-    setIsLive(status);
-    if (!status) setLiveToken(null);
-    if (status && tab === "chat") setTab("students");
-  }, undefined, undefined, () => {
-    if(tab==="attendance") fetch_(`/api/classroom/${initialCohort.id}/attendance`).then(setAttendanceSessions);
-  });
+  useClassroomPusher(
+    initialCohort.id, 
+    userId, 
+    (newMsg) => {
+      setMessages(prev => prev.find(m => m.id === newMsg.id) ? prev : [...prev, newMsg]);
+    }, 
+    (status) => {
+      setIsLive(status);
+      if (!status) setLiveToken(null);
+      if (status && tab === "chat") setTab("students");
+    }, 
+    (reactionData) => {
+      setMessages(prev => prev.map(m => {
+        if (m.id === reactionData.messageId) {
+          return { ...m, reactions: reactionData.counts };
+        }
+        return m;
+      }));
+    },
+    undefined, 
+    () => {
+      if(tab==="attendance") fetch_(`/api/classroom/${initialCohort.id}/attendance`).then(setAttendanceSessions);
+    }
+  );
 
   async function toggleLive(){ 
     setLoading(true);
@@ -270,11 +290,18 @@ export default function TutorClassroomClient({ cohort: initialCohort, tutorName,
             </div>
           </div>
           <div className="flex items-center gap-4">
-             <button onClick={()=>setShowScheduleModal(true)} className="px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Broadcast</button>
+             <button onClick={()=>setShowScheduleModal(true)} className="hidden sm:block px-5 py-2.5 bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all">Broadcast</button>
              <button onClick={toggleLive} disabled={loading} className={`px-6 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center gap-3 transition-all shadow-2xl ${isLive ? 'bg-red-600/10 text-red-500 border border-red-500/20' : 'bg-teal-600 text-white shadow-teal-500/20 active:scale-95'}`}>
                 {loading ? <Loader2 className="w-4 h-4 animate-spin"/> : isLive ? <Radio className="w-5 h-5"/> : <Video className="w-5 h-5"/>}
                 {isLive ? 'Stop Broadcast' : 'Start Stream'}
              </button>
+             
+             <div className="h-6 w-[1px] bg-white/10 mx-1 hidden sm:block" />
+
+             <UserMenu 
+               user={{ name: tutorName, email: userEmail, image: userImage }} 
+               role="tutor" 
+             />
           </div>
         </div>
       </header>
@@ -306,6 +333,30 @@ export default function TutorClassroomClient({ cohort: initialCohort, tutorName,
             <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-hide">
               {messages.map((m:any)=>{
                 const isMe = m.userId === userId;
+                const isSystem = m.userId === 'system';
+
+                if (isSystem) {
+                  const hasJoinLink = m.content.includes('[JOIN_LIVE_STREAM]');
+                  const cleanContent = m.content.replace('[JOIN_LIVE_STREAM]', '');
+                  
+                  return (
+                    <div key={m.id} className="flex flex-col items-center gap-4 animate-in fade-in zoom-in-95 w-full">
+                      <div className="bg-teal-500/10 border border-teal-500/20 text-teal-400 px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-[0.2em] shadow-xl">
+                        {cleanContent}
+                      </div>
+                      {hasJoinLink && !liveToken && isLive && (
+                        <button 
+                          onClick={toggleLive}
+                          className="flex items-center gap-2 bg-red-600 hover:bg-red-500 text-white px-8 py-3 rounded-2xl text-xs font-black uppercase tracking-widest shadow-2xl shadow-red-500/40 animate-bounce active:scale-95 transition-all"
+                        >
+                          <Video className="w-4 h-4"/>
+                          Resume Your Live Session
+                        </button>
+                      )}
+                    </div>
+                  );
+                }
+                
                 return (
                   <div key={m.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-4 duration-500`}>
                     <div className={`flex gap-4 max-w-[85%] ${isMe ? 'flex-row-reverse' : 'flex-row'}`}>

@@ -108,11 +108,10 @@ export default async function StudentProfilePage() {
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Main Stats and Content */}
           <div className="lg:col-span-3 space-y-12">
-            <div data-tour="stats" className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <div data-tour="stats" className="grid grid-cols-1 sm:grid-cols-2 gap-6">
               {[
                 {label:"Enrolled Tracks",value:enrollments.length,icon:GraduationCap,color:"from-indigo-600 to-purple-600"},
                 {label:"Pending Tasks",value:activeAssignments.length,icon:ClipboardList,color:"from-amber-500 to-orange-600"},
-                {label:"Total Invested",value:fmtNGN(totalPaid),icon:Star,color:"from-teal-500 to-cyan-600"},
               ].map(({label,value,icon:Icon,color})=>(
                 <div key={label} className="bg-white/[0.03] border border-white/[0.06] rounded-[32px] p-8 group hover:bg-white/[0.05] transition-all shadow-xl">
                   <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${color} flex items-center justify-center mb-6 shadow-2xl group-hover:scale-110 transition-transform`}><Icon className="w-8 h-8 text-white"/></div>

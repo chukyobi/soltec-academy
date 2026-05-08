@@ -28,8 +28,8 @@ export function Navbar({ theme = 'light', student }: NavProps) {
 
   const navItems = [
     { name: 'HOME', href: '/' },
-    { name: 'ACADEMY', href: '/academy' },
-    { name: 'COURSES', href: '/courses' },
+    { name: 'JOIN A COHORT', href: '/academy' },
+    { name: 'BUY A COURSE', href: '/courses' },
   ];
 
   const initials = student?.name

@@ -30,7 +30,6 @@ export default async function StudentProfilePage() {
           course:{ select:{id:true,title:true,slug:true,color:true,level:true,duration:true} },
           _count:{ select:{enrollments:true,assignments:true} },
           settings: true,
-          isLive: true,
         },
       },
     },

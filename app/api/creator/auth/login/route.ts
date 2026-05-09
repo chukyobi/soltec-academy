@@ -23,12 +23,7 @@ export async function POST(req: Request) {
     }
 
     // Use creator-specific session
-    await createSession({
-      userId: user.id,
-      email: user.email,
-      name: user.name || "",
-      role: "CREATOR"
-    }, "creator");
+    await createSession(user.id, "creator");
 
     return NextResponse.json({ success: true, user });
   } catch (err) {

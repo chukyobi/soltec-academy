@@ -1,3 +1,4 @@
+// Prisma types refreshed at 2026-05-09
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 import { getSession } from "@/lib/auth";
